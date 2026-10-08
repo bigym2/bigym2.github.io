@@ -75,9 +75,9 @@
       "kind": "huggingface"
     },
     {
-      "label": "YouTube",
-      "url": null,
-      "kind": "youtube"
+      "label": "Twitter",
+      "url": "https://x.com/Nag1ovo/status/2108230199187808367",
+      "kind": "x"
     },
     {
       "label": "Bilibili",

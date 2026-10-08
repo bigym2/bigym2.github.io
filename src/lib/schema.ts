@@ -31,7 +31,7 @@ export const site = z.object({
   links: z.array(z.object({
     label: z.string(),
     url: z.string().url().nullable(),
-    kind: z.enum(['arxiv', 'github', 'huggingface', 'youtube', 'bilibili', 'pdf', 'other']),
+    kind: z.enum(['arxiv', 'github', 'huggingface', 'youtube', 'bilibili', 'x', 'pdf', 'other']),
   })),
   // Background clip behind the title; keep it free of burned-in text.
   hero: z.object({ video: media, poster: media, alt: z.string() }),

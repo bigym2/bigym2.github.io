@@ -3,11 +3,11 @@
 // template (`button is-rounded is-dark`): dark pills with the official brand
 // mark of each destination. A link without a URL stays visible, dimmed, with
 // "soon" in place of the destination.
-import { siArxiv, siBilibili, siGithub, siHuggingface, siYoutube } from 'simple-icons';
+import { siArxiv, siBilibili, siGithub, siHuggingface, siX, siYoutube } from 'simple-icons';
 import { site } from '../lib/data';
 import Icon from './Icon.astro';
 
-const brand = { arxiv: siArxiv, github: siGithub, huggingface: siHuggingface, youtube: siYoutube, bilibili: siBilibili } as const;
+const brand = { arxiv: siArxiv, github: siGithub, huggingface: siHuggingface, youtube: siYoutube, bilibili: siBilibili, x: siX } as const;
 ---
 <nav class="links" aria-label="Project links">
   {site.links.map((l) => {
