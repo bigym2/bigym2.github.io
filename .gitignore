@@ -26,3 +26,6 @@ pnpm-debug.log*
 
 # internal notes on where each piece of content comes from (paths on swirl04, run archives); kept local
 CONTENT.md
+
+# developer notes (build, deploy variables, preview); kept local
+DEV.md
