@@ -1,0 +1,64 @@
+---
+// A section with a centred heading, in the academic-page layout. The slot
+// chooses its own column (.page for text and tables, .wrap for wide media).
+// A lede that needs markup (a key term marked with <span class="key">) comes
+// in the "lede" slot instead of the prop.
+interface Props { id: string; title: string; lede?: string; band?: boolean }
+const { id, title, lede, band = false } = Astro.props;
+---
+<section id={id} class:list={['section', { band }]} aria-labelledby={`${id}-title`}>
+  <div class="head page">
+    <h2 id={`${id}-title`}>{title}</h2>
+    {(lede || Astro.slots.has('lede')) && <p class="lede">{lede}<slot name="lede" /></p>}
+  </div>
+  <slot />
+</section>
+
+<script>
+  // Each section rises into place the first time it scrolls into view: the
+  // heading first, then its content.
+  const io = new IntersectionObserver((entries) => entries.forEach((e) => {
+    if (!e.isIntersecting) return;
+    e.target.classList.add('in');
+    io.unobserve(e.target);
+    // Off their layers once settled: a layer would also anchor fixed-position
+    // descendants (the compute chart's tooltip) to the section.
+    setTimeout(() => e.target.classList.add('done'), 1000);
+  }), { rootMargin: '0px 0px -4% 0px' });
+  document.querySelectorAll('.section').forEach((s) => io.observe(s));
+</script>
+
+<style>
+  .section { padding-block: clamp(3.5rem, 7vw, 5rem); scroll-margin-top: 3.5rem; }
+  .band { background: var(--paper-2); }
+  /* Two plain sections in a row: no change of ground to justify both paddings. */
+  .section:not(.band) + .section:not(.band) { padding-top: 0.5rem; }
+  .head { text-align: center; margin-bottom: clamp(1.75rem, 4vw, 2.5rem); }
+  h2 {
+    font-family: var(--sans);
+    font-size: clamp(1.75rem, 3.4vw, 2.25rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+  .lede { margin: 0.8rem auto 0; max-width: 56ch; font-size: 1.125rem; color: var(--ink-2); }
+  .lede :global(.key) {
+    color: var(--ink); font-weight: 600;
+    text-decoration: underline; text-decoration-color: var(--accent);
+    text-decoration-thickness: 2px; text-underline-offset: 0.25em;
+  }
+
+  /* Scroll-in. Without a script, or with reduced motion, sections are simply there. */
+  @media (prefers-reduced-motion: no-preference) {
+    /* Waiting parts sit on their own compositor layers, so the reveal only
+       moves and fades layers that are already painted. */
+    :global(html.js) .section:not(.in) > :global(*) { opacity: 0; translate: 0 1.25rem; will-change: opacity, translate; }
+    :global(html.js) .section:not(.in) > .head { filter: blur(5px); will-change: opacity, translate, filter; }
+    :global(html.js) .section.in:not(.done) > :global(*) { will-change: opacity, translate, filter; }
+    :global(html.js) .section.in > :global(*) {
+      transition: opacity 550ms var(--ease-out), translate 650ms var(--ease-out), filter 550ms var(--ease-out);
+    }
+    :global(html.js) .section.in > :global(:nth-child(2)) { transition-delay: 90ms; }
+    :global(html.js) .section.in > :global(:nth-child(n + 3)) { transition-delay: 170ms; }
+  }
+</style>

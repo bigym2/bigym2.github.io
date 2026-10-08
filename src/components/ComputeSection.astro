@@ -1,0 +1,292 @@
+---
+// Coding agents on the same tasks, plotted against what they spent on
+// inference rather than as bars. The environment budget is fixed by the
+// benchmark; tokens and dollars are not, so each score is placed on a
+// compute axis. The chart is drawn in the browser (src/lib/computeChart.ts):
+// one chart whose points move between tasks, or a grid of one panel per task.
+// Without JavaScript the table below still carries every number.
+import { compute } from '../lib/data';
+
+const n = compute.sessions_per_task;
+const cells = compute.rows.length * n;
+const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+const fmt1 = (v: number) => v.toFixed(1);
+const fmtTok = (m: number) => (m >= 1000 ? `${fmt1(m / 1000)}B` : `${Math.round(m)}M`);
+
+// The legend doubles as the scoreboard: per agent, its mean success over
+// every session, and the API-equivalent cost and input tokens of one task
+// (one session develops one task's program; the mean over every session), each with
+// a thin bar against the largest, so a same-budget, different-bill reading
+// needs no arithmetic.
+const maxOf = (k: 'mean' | 'usd' | 'tokens_m') => Math.max(...compute.agents.map((ag) => compute.totals[ag.id][k] / cells));
+// Ranked by mean success, highest first.
+const board = [...compute.agents].sort((a, b) => compute.totals[b.id].mean - compute.totals[a.id].mean).map((ag) => {
+  const t = compute.totals[ag.id];
+  return { ag, cells: [
+    { v: `${fmt1(t.mean)}%`, f: t.mean / 100 },
+    { v: `$${fmt1(t.usd / cells)}`, f: t.usd / cells / maxOf('usd') },
+    { v: `${fmt1(t.tokens_m / cells)}M`, f: t.tokens_m / cells / maxOf('tokens_m') },
+  ] };
+});
+
+const rows = compute.rows.map((r) => ({ ...r, pts: compute.agents.map((ag) => ({ ag, c: r.values[ag.id], m: mean(r.values[ag.id].sessions) })) }));
+const aggs = compute.agents.map((ag) => ({ ag, t: compute.totals[ag.id] }));
+---
+<div class="compute">
+  <figure class="quote measure">
+    <blockquote cite={compute.quote.url}><p>“{compute.quote.text}”</p></blockquote>
+    <figcaption>
+      {compute.quote.author}, <a href={compute.quote.url} target="_blank" rel="noopener"><cite>{compute.quote.title}</cite></a>, {compute.quote.date}
+    </figcaption>
+  </figure>
+
+  <figure class="plot page" data-compute={JSON.stringify({ sessions_per_task: compute.sessions_per_task, agents: compute.agents, rows: compute.rows, totals: compute.totals })}>
+    <figcaption class="head">
+      <div class="title-row">
+        <span class="title">Success against compute</span>
+      </div>
+      <div class="board" role="table" aria-label="Totals per agent">
+        <div class="brow bhead" role="row">
+          <span role="columnheader">Agent</span>
+          <span role="columnheader">Success</span>
+          <span role="columnheader">Cost per task</span>
+          <span role="columnheader">Input tokens per task</span>
+        </div>
+        {board.map((b) => (
+          <div class="brow" role="row" style={`--c:var(--series-${b.ag.id})`}>
+            <span class="who" role="rowheader"><span class="dot" aria-hidden="true"></span><b>{b.ag.model}</b><span class="harness">{b.ag.effort} · {b.ag.harness}</span></span>
+            {b.cells.map((c) => <span class="stat" role="cell"><span class="sv">{c.v}</span><span class="sb" style={`--f:${c.f}`} aria-hidden="true"></span></span>)}
+          </div>
+        ))}
+        <p class="bnote">Every agent had the same {compute.budget_steps.toLocaleString('en')} environment steps per session; tokens and dollars are what each spent on its own.</p>
+      </div>
+    </figcaption>
+
+    <!-- The chart's own controls sit on it, not above the scoreboard they do not change. -->
+    <div class="toggles">
+      <div class="seg" role="group" aria-label="View">
+        <button type="button" data-view="chart" aria-pressed="true">Chart</button>
+        <button type="button" data-view="grid" aria-pressed="false">Grid</button>
+      </div>
+      <div class="seg" role="group" aria-label="Horizontal axis">
+        <button type="button" data-axis="usd" aria-pressed="true">Cost</button>
+        <button type="button" data-axis="tok" aria-pressed="false">Input tokens</button>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="chart" data-plot></div>
+      <div class="facet" data-facet hidden>
+        <span class="fy">Success rate (%)</span>
+        <div class="grid" data-grid></div>
+        <span class="fx" data-fx></span>
+      </div>
+      <div class="tip" data-tip-box role="tooltip" hidden></div>
+    </div>
+    <p class="fkey"><svg width="26" height="12" viewBox="0 0 26 12" aria-hidden="true"><rect x="9" y="3" width="17" height="9" /><polyline points="1,9 9,9 9,3 26,3" /></svg>Pareto frontier; the shaded area is beaten on both axes</p>
+
+    <!-- Task filter for the chart; hidden in Grid view, where every task has its own panel. -->
+    <div class="chips" data-chips role="group" aria-label="Task">
+      <button type="button" class="chip" data-chip="-1" aria-pressed="true">All tasks</button>
+      {compute.rows.map((r, i) => <button type="button" class="chip" data-chip={i} aria-pressed="false">{r.label}</button>)}
+    </div>
+
+    <p class="foot">Each point is the mean of {n} sessions (100 hidden seeds each); All tasks is the mean over every session. The step line is the Pareto frontier: no agent both spends less and succeeds more than one on it, and the shaded area is beaten on both; with {n} sessions per task, near ties are within noise.{' '}{compute.footnote}</p>
+  </figure>
+
+  <details class="numbers page">
+    <summary>All {cells * compute.agents.length} sessions</summary>
+    <p class="cap" id="compute-cap">Success of each session and their mean (%), then API-equivalent cost ($) and input tokens per session. Last row: mean over all sessions, total cost and total tokens.</p>
+    <div class="tscroll" style={`--agents:${compute.agents.length}`} tabindex="0" role="region" aria-label="Per-task numbers, scrollable" aria-describedby="compute-cap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col" rowspan="2">Task</th>
+            {compute.agents.map((ag) => <th scope="colgroup" colspan="4" class="grp"><span class="dot" style={`--c:var(--series-${ag.id})`} aria-hidden="true"></span>{ag.short} ({ag.effort})</th>)}
+          </tr>
+          <tr>
+            {compute.agents.map(() => <><th scope="col">Sessions</th><th scope="col">Mean</th><th scope="col">$</th><th scope="col">Tokens</th></>)}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr data-task={r.task}>
+              <th scope="row">{r.label}</th>
+              {r.pts.map((p) => (
+                <>
+                  <td class="sessions">{p.c.sessions.join('\u2009/\u2009')}</td>
+                  <td class="num"><b>{Math.round(p.m)}</b></td>
+                  <td class="num">{fmt1(p.c.usd)}</td>
+                  <td class="num">{p.c.tokens_m}M</td>
+                </>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr data-task="all">
+            <th scope="row">All {compute.rows.length} tasks</th>
+            {aggs.map((a) => (
+              <>
+                <td class="sessions">{cells} sessions</td>
+                <td class="num"><b>{fmt1(a.t.mean)}</b></td>
+                <td class="num">{a.t.usd}</td>
+                <td class="num">{fmtTok(a.t.tokens_m)}</td>
+              </>
+            ))}
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </details>
+</div>
+
+<script>
+  import { mountCompute, type ComputeData } from '../lib/computeChart';
+  for (const fig of document.querySelectorAll<HTMLElement>('.compute [data-compute]')) {
+    mountCompute(fig, JSON.parse(fig.dataset.compute!) as ComputeData);
+  }
+</script>
+
+<style>
+  /* Quote */
+  .quote { margin-top: 0; margin-bottom: 0; text-align: center; }
+  blockquote { margin: 0; }
+  blockquote p { font-size: clamp(1.375rem, 2.6vw, 1.75rem); line-height: 1.35; font-style: italic; letter-spacing: -0.005em; text-wrap: balance; }
+  .quote figcaption { margin-top: 0.75rem; font-family: var(--sans); font-size: 0.875rem; color: var(--ink-3); }
+  .quote figcaption a { color: var(--ink-2); }
+  .quote cite { font-style: normal; }
+
+  /* Figure chrome */
+  .plot { margin-top: clamp(2.5rem, 6vw, 3.5rem); margin-bottom: 0; font-family: var(--sans); }
+  .head { display: grid; gap: 0.5rem; margin-bottom: 1rem; }
+  .title-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; }
+  .title { font-size: 1.0625rem; font-weight: 700; letter-spacing: -0.01em; }
+  /* Scoreboard legend */
+  .board { margin-top: 0.5rem; font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+  .brow { display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr)); align-items: center; column-gap: 1.5rem; padding: 0.55rem 0; border-bottom: 1px solid var(--rule); }
+  .bhead { padding-top: 0; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); border-bottom-color: var(--rule-strong); }
+  .who { display: flex; align-items: baseline; gap: 0.5rem; min-width: 0; }
+  .who .dot { align-self: center; }
+  .who b { font-weight: 650; white-space: nowrap; }
+  .harness { color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stat { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); align-items: center; column-gap: 0.6rem; }
+  .sv { text-align: right; font-weight: 600; }
+  .sb { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) calc(var(--f) * 100%), var(--rule) 0); }
+  .bnote { margin: 0.6rem 0 0; font-size: 0.8125rem; color: var(--ink-3); }
+  @media (max-width: 640px) {
+    .bhead { display: none; }
+    .brow { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 0.4rem; column-gap: 0.75rem; }
+    .who { grid-column: 1 / -1; }
+    .stat { grid-template-columns: 1fr; row-gap: 0.25rem; }
+    .sv { text-align: left; }
+  }
+  .dot { width: 0.7rem; height: 0.7rem; border-radius: 50%; flex: none; display: inline-block; background: var(--c); box-shadow: 0 0 0 0.75px rgb(0 0 0 / 0.8); }
+
+  .toggles { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.75rem; }
+  .seg { display: inline-flex; flex: none; padding: 3px; border-radius: 999px; background: var(--paper-3); font-size: 0.8125rem; }
+  .seg button {
+    appearance: none; border: 0; background: transparent; color: var(--ink-2); cursor: pointer;
+    font: inherit; font-weight: 600; padding: 0.28rem 0.8rem; border-radius: 999px;
+    transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out), scale 120ms var(--ease-out);
+  }
+  .seg button[aria-pressed='true'] { background: var(--paper); color: var(--ink); box-shadow: var(--shadow-lift); }
+  .seg button:active { scale: 0.96; }
+
+  .fkey { display: flex; align-items: center; gap: 0.5rem; margin: 0.75rem 0 0; font-size: 0.8125rem; color: var(--ink-3); }
+  .fkey svg { flex: none; overflow: visible; }
+  .fkey rect { fill: var(--ink); opacity: 0.045; }
+  .fkey polyline { fill: none; stroke: var(--ink-2); stroke-width: 1.5; stroke-linejoin: round; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1rem; }
+  .chip {
+    appearance: none; border: 1px solid var(--rule); background: var(--paper); color: var(--ink-2); cursor: pointer;
+    font: inherit; font-size: 0.8125rem; font-weight: 600; padding: 0.28rem 0.75rem; border-radius: 999px;
+    transition: background-color 160ms, color 160ms, border-color 160ms;
+  }
+  .chip[aria-pressed='true'] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  @media (hover: hover) { .chip:hover:not([aria-pressed='true']) { border-color: var(--rule-strong); color: var(--ink); } }
+
+  .stage { position: relative; }
+  .chart { min-height: 300px; }
+  .facet { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); row-gap: 0.75rem; }
+  .fy { writing-mode: vertical-rl; rotate: 180deg; align-self: center; justify-self: center; font-size: 13px; font-weight: 600; }
+  .fx { grid-column: 2; text-align: center; font-size: 13px; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem 1.25rem; }
+
+  .foot { margin-top: 1.25rem; max-width: 72ch; font-size: 0.8125rem; line-height: 1.55; color: var(--ink-3); }
+
+  @media (max-width: 760px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 0.75rem; } }
+
+  /* Numbers */
+  .numbers { margin-top: 1.5rem; font-family: var(--sans); }
+  summary { cursor: pointer; font-size: 0.875rem; font-weight: 600; color: var(--ink-2); width: max-content; }
+  summary:hover { color: var(--ink); }
+  .tscroll { margin-top: 0.5rem; overflow-x: auto; overscroll-behavior-x: contain; }
+  table { width: 100%; min-width: calc(8rem + 14rem * var(--agents)); border-collapse: collapse; font-size: 0.875rem; }
+  .cap { margin: 1rem 0 0; max-width: 72ch; font-size: 0.8125rem; line-height: 1.5; color: var(--ink-3); }
+  th, td { padding: 0.5rem 0.45rem; text-align: left; font-weight: 400; white-space: nowrap; }
+  thead th { font-weight: 600; font-size: 0.75rem; color: var(--ink-3); border-bottom: 1px solid var(--rule-strong); vertical-align: bottom; }
+  thead th.grp { color: var(--ink); font-size: 0.875rem; }
+  thead th.grp .dot { margin-right: 0.4rem; vertical-align: -0.05rem; }
+  tbody tr, tfoot tr { border-bottom: 1px solid var(--rule); }
+  tfoot tr { border-top: 1px solid var(--rule-strong); }
+  tbody th, tfoot th { font-weight: 500; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .sessions { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+
+  /* Phones: nothing under ~12.5px. */
+  @media (max-width: 640px) {
+    .bhead { font-size: 0.75rem; }
+    thead th { font-size: 0.8125rem; }
+  }
+</style>
+
+<!-- The chart and grid are built at runtime, so their styles cannot be scoped. -->
+<style is:global>
+  .compute .enter { animation: compute-enter 420ms var(--ease-out) both; }
+  @keyframes compute-enter { from { opacity: 0; translate: 0 6px; } to { opacity: 1; translate: 0 0; } }
+  @media (prefers-reduced-motion: reduce) { .compute .enter { animation: none; } }
+
+  .compute svg { display: block; overflow: visible; font-family: var(--sans); }
+  .compute svg text { fill: var(--ink-3); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .compute svg .grid { stroke: var(--rule); stroke-dasharray: 2 3; }
+  .compute svg .axis { stroke: var(--ink-3); }
+  .compute svg .tick { fill: var(--ink-2); font-size: 11.5px; }
+  .compute svg .atitle { fill: var(--ink); font-size: 13px; font-weight: 600; }
+  /* Pareto frontier: a step line and, faintly shaded, the area it beats on
+     both axes. Agents off it keep their colour. */
+  .compute svg .front { fill: none; stroke: var(--ink-2); stroke-width: 1.5; stroke-linejoin: round; }
+  .compute .panel .front { stroke-width: 1.25; }
+  .compute svg .region { fill: var(--ink); opacity: 0.045; }
+  .compute svg .lead { stroke: var(--ink-3); stroke-width: 0.75; }
+  .compute svg .dot { fill: var(--c); stroke: rgb(0 0 0 / 0.8); stroke-width: 0.75; }
+  .compute svg .hit { fill: transparent; cursor: pointer; outline: none; }
+  .compute svg .hit:focus-visible { stroke: var(--ink); stroke-width: 1.5; }
+  /* A halo in the background colour lets lines pass behind labels. */
+  .compute svg .lab, .compute svg .val { paint-order: stroke; stroke: var(--paper-2); stroke-width: 4px; stroke-linejoin: round; }
+  @media (hover: hover) { .compute .panel:hover svg .val { stroke: var(--paper-3); } }
+  .compute svg .lab { fill: var(--ink); font-size: 12.5px; font-weight: 650; }
+  .compute svg .lab .v { fill: var(--ink-2); font-weight: 400; }
+  .compute svg .val { fill: var(--ink-2); font-size: 11.5px; font-weight: 600; }
+  .compute svg .pill rect { fill: var(--ink); }
+  .compute svg .pill text { fill: var(--paper); font-size: 11.5px; font-weight: 700; }
+
+  .compute .panel {
+    appearance: none; border: 0; background: transparent; color: inherit; font: inherit; text-align: left;
+    display: block; width: 100%; padding: 0.35rem 0.4rem 0.25rem; border-radius: var(--r-md); cursor: pointer;
+    transition: background-color 160ms;
+  }
+  @media (hover: hover) { .compute .panel:hover { background: var(--paper-3); } }
+  .compute .panel .ph { display: flex; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.35rem; font-size: 0.875rem; font-weight: 650; }
+  .compute .panel .ph .r { font-size: 0.75rem; font-weight: 600; color: var(--ink-3); white-space: nowrap; }
+
+  .compute .tip {
+    position: fixed; z-index: 30; translate: -50% calc(-100% - 10px);
+    width: max-content; max-width: 17rem; padding: 0.45rem 0.6rem; border-radius: var(--r-sm);
+    font-family: var(--sans); font-size: 0.75rem; line-height: 1.45; white-space: pre-line;
+    color: var(--paper); background: var(--ink); pointer-events: none;
+  }
+
+  @media (max-width: 640px) { .compute .panel .ph .r { font-size: 0.8125rem; } }
+</style>

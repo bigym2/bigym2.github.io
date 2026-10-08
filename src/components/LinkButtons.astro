@@ -1,0 +1,43 @@
+---
+// The row of project links, in the style of the Nerfies/Bulma academic
+// template (`button is-rounded is-dark`): dark pills with the official brand
+// mark of each destination. A link without a URL stays visible, dimmed, with
+// "soon" in place of the destination.
+import { siArxiv, siBilibili, siGithub, siHuggingface, siYoutube } from 'simple-icons';
+import { site } from '../lib/data';
+import Icon from './Icon.astro';
+
+const brand = { arxiv: siArxiv, github: siGithub, huggingface: siHuggingface, youtube: siYoutube, bilibili: siBilibili } as const;
+---
+<nav class="links" aria-label="Project links">
+  {site.links.map((l) => {
+    const mark = brand[l.kind as keyof typeof brand];
+    const icon = mark
+      ? <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path d={mark.path} /></svg>
+      : <Icon name={l.kind === 'pdf' ? 'paper' : 'link'} size={16} />;
+    return l.url ? (
+      <a class="button" href={l.url} target="_blank" rel="noopener">{icon}<span>{l.label}</span></a>
+    ) : (
+      <span class="button" aria-disabled="true" title="Coming soon">{icon}<span>{l.label}</span><span class="soon">soon</span></span>
+    );
+  })}
+</nav>
+
+<style>
+  .links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem 0.6rem; }
+  .button {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    height: 2.5rem; padding: 0 1.25rem 0 1.1rem;
+    border-radius: 999px;
+    background: #363636; color: #fff;
+    font-family: var(--sans); font-size: 1rem; font-weight: 500; line-height: 1;
+    text-decoration: none;
+    box-shadow: 0 0 0 1px oklch(1 0 0 / 0.14), 0 2px 8px -2px oklch(0 0 0 / 0.35);
+    transition-property: background-color, scale; transition-duration: 160ms; transition-timing-function: var(--ease-out);
+  }
+  @media (hover: hover) { a.button:hover { background: #292929; } }
+  a.button:active { scale: 0.96; }
+  .mark { width: 1rem; height: 1rem; fill: currentColor; flex: none; }
+  .button[aria-disabled] { color: oklch(1 0 0 / 0.55); background: oklch(0.25 0 0 / 0.75); cursor: default; }
+  .soon { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.8; }
+</style>

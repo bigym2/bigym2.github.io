@@ -1,0 +1,655 @@
+---
+// The policy explorer: every development session of every coding agent, as
+// one matrix (rows: agent and session, columns: tasks, cells: success on the
+// 100 hidden seeds). Pick a cell to read the program that session submitted
+// and see its outcome on each seed. The default session is rendered on the
+// server so the explorer is complete without JavaScript.
+import { agent, agentById, results, media, sessionSource, viserPlayer, codeTrace } from '../lib/data';
+import { highlightPython } from '../lib/highlight';
+import Icon from './Icon.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const pct = (r: number) => `${Math.round(r * 100)}%`;
+
+// Column labels as in the results table.
+const label = new Map(results.generations[0].rows.map((r) => [r.task, r.label]));
+// With the dataset online every seed is playable: those not served with the
+// page are fetched from it, with the task's camera.
+const remote = agent.rollouts_remote;
+const payload = {
+  policyBase: `${base}/policies`,
+  remote: remote ? {
+    base: remote.base.replace(/\/$/, ''),
+    client: viserPlayer('x.viser', { position: [0, 0, 0], look_at: [0, 0, 0] }).client,
+    queries: Object.fromEntries(Object.entries(remote.cameras).map(([t, c]) => [t, viserPlayer('x.viser', c).query])),
+    traces: remote.traces,
+  } : null,
+  tasks: agent.tasks.map((t) => ({
+    id: t.task,
+    name: label.get(t.task) ?? t.task,
+    sessions: t.sessions.map((s) => ({
+      id: s.id,
+      label: s.label,
+      rate: s.success_rate,
+      vision: s.ik ? 'solves inverse kinematics' : 'no inverse kinematics',
+      lines: s.lines,
+      seeds: s.episodes.map((e) => e.seed),
+      outcomes: s.episodes.map((e) => (e.success ? '1' : '0')).join(''),
+      steps: s.episodes.map((e) => e.steps),
+      rollouts: Object.fromEntries(s.rollouts.map((r) => [r.seed, { video: r.video ? media(r.video) : null, poster: r.poster ? media(r.poster) : null, speed: r.speed, viser: r.viser ? viserPlayer(r.viser.file, r.viser.camera) : null, trace: codeTrace(t.task, s.id, r.seed) }])),
+    })),
+  })),
+};
+
+// Opens on the session the page's two-routes comparison is about.
+const t0 = payload.tasks.find((t) => t.id === 'reach_target_multi_modal') ?? payload.tasks[0];
+const s0 = t0.sessions.find((s) => s.id === 'opus-s3') ?? t0.sessions[0];
+const src0 = agent.tasks.find((t) => t.task === t0.id)!.sessions.find((s) => s.id === s0.id)!;
+// Matrix rows: each agent's sessions in order.
+const rows = agent.agents.flatMap((a) =>
+  [...new Set(agent.tasks.flatMap((t) => t.sessions.filter((s) => s.agent === a.id).map((s) => s.session)))]
+    .sort((x, y) => x - y)
+    .map((n, i, all) => ({ agent: a, n, first: i === 0, span: all.length })));
+const cell = (task: string, agentId: string, n: number) =>
+  agent.tasks.find((t) => t.task === task)!.sessions.find((s) => s.agent === agentId && s.session === n)!;
+const firstSeed = Number(Object.keys(s0.rollouts)[0] ?? s0.seeds[0]);
+const r0 = s0.rollouts[firstSeed];
+const idx0 = s0.seeds.indexOf(firstSeed);
+const code0 = await highlightPython(sessionSource(src0.files));
+---
+<div class="explorer wrap" data-explorer>
+  <script type="application/json" data-explorer-data set:html={JSON.stringify(payload)} />
+
+  <div class="matrix-scroll" tabindex="0" role="region" aria-label="Success of every session, scrollable">
+    <table class="matrix">
+      <caption class="visually-hidden">Success on 100 hidden seeds of each coding-agent session; choose a cell to open its program.</caption>
+      <thead>
+        <tr>
+          <th scope="col" class="m-agent"><span class="kicker">Session</span></th>
+          {payload.tasks.map((t) => <th scope="col">{t.name}</th>)}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr class:list={{ first: r.first }}>
+            <th scope="row" class="m-agent">
+              {r.first && <span class="m-model">{r.agent.short}</span>}
+              <span class="m-n">session {r.n}</span>
+            </th>
+            {payload.tasks.map((t) => {
+              const s = cell(t.id, r.agent.id, r.n);
+              const pc = Math.round(s.success_rate * 100);
+              return (
+                <td>
+                  <button type="button" class="m-cell" data-task={t.id} data-session={s.id}
+                          style={`--v:${s.success_rate}; --hl: var(--series-${r.agent.series})`}
+                          aria-pressed={t.id === t0.id && s.id === s0.id ? 'true' : 'false'}
+                          aria-label={`${r.agent.model}, session ${r.n}, ${t.name}: ${pc}% of 100 hidden seeds${s.ik ? ', solves inverse kinematics' : ''}`}
+                          title={`${r.agent.model} · session ${r.n} · ${t.name}\n${pc}/100 hidden seeds · ${s.lines} lines · $${s.cost_usd.toFixed(2)}${s.ik ? ' · solves IK' : ''}`}>
+                    {pc}
+                  </button>
+                </td>
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  <!-- Phones: the same cells transposed, tasks down and sessions across, so
+       the whole matrix fits the width with no sideways scroll. -->
+  <table class="matrix matrix-t">
+    <caption class="visually-hidden">Success on 100 hidden seeds of each coding-agent session; choose a cell to open its program.</caption>
+    <thead>
+      <tr>
+        <td></td>
+        {agent.agents.map((a) => <th scope="colgroup" colspan={rows.filter((r) => r.agent.id === a.id).length}>{a.short}</th>)}
+      </tr>
+      <tr>
+        <th scope="col" class="m-task"><span class="kicker">Task</span></th>
+        {rows.map((r) => <th scope="col" class:list={['m-sn', { first: r.first }]}>s{r.n}</th>)}
+      </tr>
+    </thead>
+    <tbody>
+      {payload.tasks.map((t) => (
+        <tr>
+          <th scope="row" class="m-task">{t.name}</th>
+          {rows.map((r) => {
+            const s = cell(t.id, r.agent.id, r.n);
+            const pc = Math.round(s.success_rate * 100);
+            return (
+              <td class:list={{ first: r.first }}>
+                <button type="button" class="m-cell" data-task={t.id} data-session={s.id}
+                        style={`--v:${s.success_rate}; --hl: var(--series-${r.agent.series})`}
+                        aria-pressed={t.id === t0.id && s.id === s0.id ? 'true' : 'false'}
+                        aria-label={`${r.agent.model}, session ${r.n}, ${t.name}: ${pc}% of 100 hidden seeds${s.ik ? ', solves inverse kinematics' : ''}`}>
+                  {pc}
+                </button>
+              </td>
+            );
+          })}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+  <p class="m-legend">
+    <span>Success (%) on the 100 hidden seeds; darker is higher. Pick a cell to read its program.</span>
+  </p>
+
+  <p class="picked" data-picked><b>{t0.name}</b> · {s0.label}</p>
+
+  <div class="body">
+    <figure class="code-panel">
+      <figcaption class="code-head">
+        <span class="file"><Icon name="code" size={14} />policy.py</span>
+        <span class="meta" data-meta>{s0.lines} lines · {s0.vision}</span>
+        <a class="copy raw" data-raw href={`${base}/policies/${t0.id}/${s0.id}.txt`} target="_blank" rel="noopener" aria-label="Open the full program as plain text">Raw</a>
+        <button type="button" class="copy" data-copy aria-label="Copy policy.py">
+          <Icon name="copy" size={14} /><span data-copy-label>Copy</span>
+        </button>
+      </figcaption>
+      <div class="code" data-code tabindex="0" aria-label="Submitted policy source" set:html={code0} />
+      <button type="button" class="resume" data-resume hidden>Back to the running code</button>
+    </figure>
+
+    <div class="side">
+      <div class="frame player" data-player>
+        <div class="view-toggle" role="group" aria-label="Rollout view" hidden={!(r0?.video && r0?.viser)}>
+          <button type="button" data-view="video" aria-pressed="true">Video</button>
+          <button type="button" data-view="3d" aria-pressed="false" disabled={!r0?.viser}>3D</button>
+        </div>
+        <p class="orbit-hint" data-orbit-hint hidden>Drag to orbit · scroll to zoom</p>
+        {r0?.video ? (
+          <video data-rollout data-autoplay data-src={r0.video} poster={r0.poster} muted playsinline loop preload="none" width="1024" height="768" aria-label="Rollout recording"></video>
+        ) : null}
+        <div class="no-rec" data-norec hidden={!!r0?.video}>
+          <p>No recording for this seed yet.</p>
+        </div>
+      </div>
+      <div class="under">
+        <div class="phases" data-phases role="group" aria-label="Phases of the episode, by the code they run" hidden></div>
+        <code class="ph-methods" data-ph-methods></code>
+        <p class="rollout-meta" data-rollout-meta>
+          <span data-seed>Seed {firstSeed}</span>
+          <span class:list={['outcome', s0.outcomes[idx0] === '1' ? 'ok' : 'fail']} data-outcome>{s0.outcomes[idx0] === '1' ? 'Success' : 'Failure'}</span>
+          <span data-steps>{s0.steps[idx0].toLocaleString('en')} steps</span>
+          {r0?.video && <span data-speed>{r0.speed}× speed</span>}
+        </p>
+      </div>
+
+      <div class="tally">
+        <div class="score">
+          <span class="score-num" data-score>{s0.outcomes.split('').filter((c) => c === '1').length}</span>
+          <span class="score-of">/ {s0.seeds.length} hidden seeds solved</span>
+        </div>
+        <div class="seedgrid" data-grid role="group" aria-label="Outcome on every hidden seed">
+          {s0.seeds.map((seed, i) => (
+            <button type="button" class:list={['seed', s0.outcomes[i] === '1' ? 'ok' : 'fail', { rec: !payload.remote && seed in s0.rollouts }]}
+                    data-seed={seed} aria-pressed={seed === firstSeed ? 'true' : 'false'}
+                    aria-label={`Seed ${seed}: ${s0.outcomes[i] === '1' ? 'success' : 'failure'}${seed in s0.rollouts ? ', recorded' : ''}`}></button>
+          ))}
+        </div>
+        <p class="legend">
+          <span><i class="sw ok"></i>success</span>
+          <span><i class="sw fail"></i>failure</span>
+          {payload.remote ? <span>click any seed to watch it in 3D</span> : <span><i class="sw rec"></i>recorded, click to play</span>}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { followTheme, themed, whenScrollRests } from '../lib/viserTheme';
+  import { attachFullscreen } from '../lib/fullscreen';
+  import { codeTrace } from '../lib/codeTrace';
+  followTheme();
+  type Viser = { client: string; recording: string; query: string };
+  type Session = { id: string; label: string; rate: number; vision: string; lines: number; seeds: number[]; outcomes: string; steps: number[]; rollouts: Record<string, { video: string | null; poster: string | null; speed: number; viser: Viser | null; trace: string | null }> };
+  type Task = { id: string; name: string; sessions: Session[] };
+  type Payload = { policyBase: string; remote: { base: string; client: string; queries: Record<string, string>; traces: boolean } | null; tasks: Task[] };
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-explorer]')) {
+    const data: Payload = JSON.parse(root.querySelector('[data-explorer-data]')!.textContent!);
+    const $ = <T extends Element>(sel: string) => root.querySelector<T>(sel)!;
+    const codeCache = new Map<string, Promise<string>>();
+    const on = root.querySelector<HTMLElement>('.m-cell[aria-pressed="true"]')!;
+    let task = data.tasks.find((t) => t.id === on.dataset.task)!;
+    let session = task.sessions.find((s) => s.id === on.dataset.session)!;
+    let seed = firstSeed(session);
+    let view: 'video' | '3d' = 'video';
+    let live = false; // the 3D player may load (set once the explorer is near)
+    attachFullscreen($('[data-player]'));
+    // The code follows the 3D replay where the rollout has a code trace.
+    const tracer = codeTrace({ code: $('[data-code]'), player: $('[data-player]'), phases: $('[data-phases]'), methods: $('[data-ph-methods]'), resume: $('[data-resume]') });
+    let traced = '';
+
+    // A seed's recording: served with the page, else from the dataset.
+    function rollout(t: Task, s: Session, sd: number) {
+      const local = s.rollouts[sd];
+      if (local || !data.remote || !(t.id in data.remote.queries)) return local;
+      return {
+        video: null, poster: null, speed: 1,
+        viser: { client: data.remote.client, recording: `${data.remote.base}/viser/${t.id}/${s.id}_seed${sd}.viser`, query: data.remote.queries[t.id] },
+        trace: data.remote.traces ? `${data.remote.base}/trace/${t.id}/${s.id}_seed${sd}.json` : null,
+      };
+    }
+
+    function firstSeed(s: Session) {
+      const rec = Object.keys(s.rollouts);
+      return rec.length ? Number(rec[0]) : s.seeds[0];
+    }
+    const pct = (r: number) => `${Math.round(r * 100)}%`;
+    const press = (list: NodeListOf<HTMLElement>, match: (el: HTMLElement) => boolean) =>
+      list.forEach((el) => el.setAttribute('aria-pressed', String(match(el))));
+
+    function code(t: Task, s: Session) {
+      const key = `${t.id}/${s.id}`;
+      if (!codeCache.has(key)) codeCache.set(key, fetch(`${data.policyBase}/${key}.html`).then((r) => r.text()));
+      return codeCache.get(key)!;
+    }
+
+    async function renderCode() {
+      const el = $<HTMLElement>('[data-code]');
+      const t = task, s = session;
+      $('[data-meta]').textContent = `${s.lines} lines · ${s.vision}`;
+      $<HTMLAnchorElement>('[data-raw]').href = `${data.policyBase}/${t.id}/${s.id}.txt`;
+      $('[data-picked]').innerHTML = '';
+      const b = document.createElement('b'); b.textContent = t.name;
+      $('[data-picked]').append(b, ` · ${s.label}`);
+      el.dataset.loading = '';
+      const html = await code(t, s);
+      if (t !== task || s !== session) return;
+      el.innerHTML = html;
+      el.scrollTop = 0;
+      delete el.dataset.loading;
+      tracer.attach();
+    }
+
+    function renderGrid() {
+      const grid = $('[data-grid]');
+      grid.innerHTML = '';
+      session.seeds.forEach((sd, i) => {
+        const ok = session.outcomes[i] === '1';
+        const rec = !!rollout(task, session, sd);
+        // With the dataset every seed plays, so no seed is marked as recorded.
+        const mark = rec && !data.remote;
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = `seed ${ok ? 'ok' : 'fail'}${mark ? ' rec' : ''}`;
+        b.dataset.seed = String(sd);
+        b.setAttribute('aria-pressed', String(sd === seed));
+        b.setAttribute('aria-label', `Seed ${sd}: ${ok ? 'success' : 'failure'}${rec ? ', recorded' : ''}`);
+        grid.append(b);
+      });
+      $('[data-score]').textContent = String(session.outcomes.split('').filter((c) => c === '1').length);
+      root.querySelector('.score-of')!.textContent = `/ ${session.seeds.length} hidden seeds solved`;
+    }
+
+    function renderSeed() {
+      const i = session.seeds.indexOf(seed);
+      const ok = session.outcomes[i] === '1';
+      const r = rollout(task, session, seed);
+      const player = $('[data-player]');
+      let video = player.querySelector<HTMLVideoElement>('video');
+      const norec = $<HTMLElement>('[data-norec]');
+      const has3d = !!r?.viser;
+      // The reader's choice sticks; a seed without a recording only falls back,
+      // and one recorded in 3D only opens in 3D.
+      const shown = has3d && (view === '3d' || !r?.video) ? '3d' : 'video';
+      const btn3d = $<HTMLButtonElement>('[data-view="3d"]');
+      btn3d.disabled = !has3d;
+      btn3d.title = has3d ? 'Interactive 3D replay' : 'No 3D replay for this seed';
+      // The switch only matters when a seed has both a video and a 3D replay.
+      $<HTMLElement>('.view-toggle').hidden = !(r?.video && has3d);
+      press(root.querySelectorAll<HTMLElement>('[data-view]'), (el) => el.dataset.view === shown);
+      let frame = player.querySelector<HTMLIFrameElement>('iframe');
+      $<HTMLElement>('[data-orbit-hint]').hidden = shown !== '3d';
+      if (shown === '3d' && r?.viser) {
+        const v = r.viser;
+        const src = `${v.client}?playbackPath=${encodeURIComponent(new URL(v.recording, location.href).href)}${v.query}`;
+        if (!frame) {
+          frame = document.createElement('iframe');
+          frame.title = '3D replay of the rollout';
+          frame.setAttribute('allow', 'fullscreen');
+          player.append(frame);
+        }
+        if (frame.dataset.viser !== src) { frame.dataset.viser = src; if (live) frame.src = themed(src); }
+        frame.hidden = false;
+        if (video) { video.pause(); video.hidden = true; }
+        norec.hidden = true;
+      } else if (r?.video) {
+        if (frame) frame.hidden = true;
+        if (!video) {
+          video = document.createElement('video');
+          Object.assign(video, { muted: true, playsInline: true, loop: true, autoplay: true, width: 1024, height: 768 });
+          video.setAttribute('aria-label', 'Rollout recording');
+          video.dataset.autoplay = '';
+          player.prepend(video);
+          document.dispatchEvent(new CustomEvent('autovideo:attach', { detail: video }));
+        }
+        if (video.getAttribute('src') !== r.video) { video.poster = r.poster ?? ''; video.src = r.video; }
+        video.hidden = false;
+        if (!matchMedia('(prefers-reduced-motion: reduce)').matches) video.play().catch(() => {});
+        else video.controls = true;
+        norec.hidden = true;
+      } else {
+        if (frame) frame.hidden = true;
+        if (video) { video.pause(); video.hidden = true; }
+        norec.hidden = false;
+      }
+      $('[data-seed]').textContent = `Seed ${seed}`;
+      const out = $<HTMLElement>('[data-outcome]');
+      out.textContent = ok ? 'Success' : 'Failure';
+      out.className = `outcome ${ok ? 'ok' : 'fail'}`;
+      $('[data-steps]').textContent = `${session.steps[i].toLocaleString('en')} steps`;
+      const meta = $('[data-rollout-meta]');
+      meta.querySelector('[data-speed]')?.remove();
+      // The 3D replay plays in real time; only the rendered clip is sped up.
+      if (r?.video && shown === 'video') { const sp = document.createElement('span'); sp.dataset.speed = ''; sp.textContent = `${r.speed}× speed`; meta.append(sp); }
+      // A trace only follows the 3D replay.
+      const url = shown === '3d' ? r?.trace ?? null : null;
+      const key = `${task.id}/${session.id}/${seed}/${url}`;
+      if (key !== traced) { traced = key; tracer.load(url); }
+      press(root.querySelectorAll<HTMLElement>('.seed'), (el) => Number(el.dataset.seed) === seed);
+    }
+
+    function select(t: Task, s: Session) {
+      task = t; session = s; seed = firstSeed(s);
+      press(root.querySelectorAll<HTMLElement>('.m-cell'), (el) => el.dataset.task === t.id && el.dataset.session === s.id);
+      renderCode(); renderGrid(); renderSeed();
+    }
+
+    // "Read the whole program" in the two-routes cards opens a session here.
+    document.addEventListener('explorer:open', (e) => {
+      const { task: tid, session: sid } = (e as CustomEvent<{ task: string; session: string }>).detail;
+      const t = data.tasks.find((x) => x.id === tid);
+      const s = t?.sessions.find((x) => x.id === sid);
+      if (!t || !s) return;
+      select(t, s);
+      $('[data-picked]').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    });
+
+    root.querySelectorAll<HTMLElement>('.m-cell').forEach((b) => b.addEventListener('click', () => {
+      const t = data.tasks.find((x) => x.id === b.dataset.task)!;
+      select(t, t.sessions.find((x) => x.id === b.dataset.session)!);
+    }));
+    $('[data-grid]').addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLElement>('.seed');
+      if (!b) return;
+      seed = Number(b.dataset.seed);
+      renderSeed();
+    });
+
+    root.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((b) => b.addEventListener('click', () => {
+      if (b.disabled) return;
+      view = b.dataset.view as 'video' | '3d';
+      renderSeed();
+    }));
+
+    // The server renders the video case; a 3D-only first seed opens here.
+    if (session.rollouts[seed] && !session.rollouts[seed].video) renderSeed();
+    // The player starts only once the explorer is near and the scroll rests
+    // (see whenScrollRests); until then a chosen replay just waits in data-viser.
+    const near = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      near.disconnect();
+      whenScrollRests(() => {
+        live = true;
+        const f = $('[data-player]').querySelector<HTMLIFrameElement>('iframe');
+        if (f?.dataset.viser && !f.getAttribute('src')) f.src = themed(f.dataset.viser);
+      });
+    }, { rootMargin: '600px' });
+    near.observe($('[data-player]'));
+
+    $('[data-copy]').addEventListener('click', async () => {
+      const text = $<HTMLElement>('[data-code]').innerText;
+      const label = $('[data-copy-label]');
+      try { await navigator.clipboard.writeText(text); label.textContent = 'Copied'; }
+      catch { label.textContent = 'Press ⌘C'; }
+      setTimeout(() => (label.textContent = 'Copy'), 1600);
+    });
+  }
+</script>
+
+<style is:global>
+  /* Global, nested under .explorer: the script re-renders the session tabs and
+     seed grid, and scoped styles would not reach elements created at runtime. */
+  .explorer {
+    /* Session matrix. Cells take the agent's series colour, deeper with success;
+       the number is always there, so colour never carries it alone. Whether a
+       program solves IK is in the cell's tooltip and the code panel. */
+    .matrix-scroll { overflow-x: auto; overscroll-behavior-x: contain; margin-inline: calc(-1 * var(--gutter)); padding: 2px var(--gutter); }
+    .matrix { width: 100%; min-width: 46rem; table-layout: fixed; border-collapse: separate; border-spacing: 3px; font-family: var(--sans); }
+    .matrix th { font-weight: 550; font-size: 0.75rem; line-height: 1.25; color: var(--ink-2); vertical-align: bottom; padding: 0 0.15rem 0.4rem; text-align: center; }
+    .matrix th.m-agent { width: 8.5rem; text-align: left; padding-left: 0; }
+    .matrix tbody th.m-agent { vertical-align: middle; padding: 0 0.5rem 0 0; white-space: nowrap; }
+    .matrix tr.first:not(:first-child) > * { border-top: 0.6rem solid transparent; }
+    .m-model { display: block; font-size: 0.875rem; font-weight: 700; color: var(--ink); }
+    .m-n { display: block; font-size: 0.75rem; font-weight: 450; color: var(--ink-3); }
+    .matrix tbody th.m-agent { position: sticky; left: 0; z-index: 1; background: var(--paper); }
+    .matrix td { padding: 0; }
+    .m-cell {
+      position: relative; display: block; width: 100%; height: 2.35rem; padding: 0; border: 0; border-radius: var(--r-sm); cursor: pointer;
+      font-family: var(--sans); font-size: 0.875rem; font-weight: 600; font-variant-numeric: tabular-nums;
+      color: var(--ink); background: color-mix(in oklab, var(--hl) calc(8% + var(--v) * 62%), var(--paper));
+      transition-property: scale, box-shadow; transition-duration: 140ms; transition-timing-function: var(--ease-out);
+    }
+    .m-cell[aria-pressed='true'] { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink); z-index: 1; }
+    @media (hover: hover) { .m-cell:hover { scale: 1.06; } }
+    .m-cell:active { scale: 0.95; }
+    .m-cell:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .m-legend { display: flex; flex-wrap: wrap; gap: 0.3rem 1.25rem; margin: 0.6rem 0 0; font-family: var(--sans); font-size: 0.75rem; color: var(--ink-3); }
+    .m-legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+    .picked { scroll-margin-top: 5rem; margin: 1.75rem 0 0.9rem; font-family: var(--sans); font-size: 0.9375rem; color: var(--ink-2); }
+    .picked b { color: var(--ink); font-weight: 650; }
+
+    /* The code panel takes the height of the side column (player, score,
+       seeds) and scrolls inside it, so neither column leaves a gap below. */
+    .body { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 1.5rem; align-items: stretch; }
+
+    .code-panel { display: flex; flex-direction: column; min-height: 0; margin: 0; border-radius: var(--r-lg); background: var(--paper-2); box-shadow: inset 0 0 0 1px var(--rule); overflow: hidden; }
+    .code-head { display: flex; align-items: center; gap: 0.9rem; padding: 0.6rem 0.6rem 0.6rem 1rem; border-bottom: 1px solid var(--rule); font-family: var(--sans); font-size: 0.8125rem; }
+    .file { display: inline-flex; align-items: center; gap: 0.4rem; font-family: var(--mono); font-weight: 600; color: var(--ink); }
+    .meta { flex: 1; min-width: 0; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .copy {
+      display: inline-flex; align-items: center; gap: 0.35rem; height: 2rem; padding-inline: 0.6rem;
+      border: 0; border-radius: var(--r-sm); background: transparent; color: var(--ink-2); font: inherit; cursor: pointer;
+      transition-property: background-color, scale; transition-duration: 140ms;
+    }
+    .raw { text-decoration: none; }
+    @media (hover: hover) { .copy:hover { background: var(--paper-3); color: var(--ink); } }
+    .copy:active { scale: 0.96; }
+
+    /* An opaque, promoted scroller: with a transparent background and no layer
+       of its own, dragging its scrollbar repaints on the main thread and lags
+       (wheel scrolling takes the fast path either way). */
+    .code {
+      flex: 1 1 0; height: 0; min-height: 0; overflow: auto; overscroll-behavior: contain;
+      background: var(--paper-2); will-change: scroll-position; contain: layout paint;
+      transition: opacity 160ms var(--ease-out);
+    }
+    .code[data-loading] { opacity: 0.4; }
+    .code pre { margin: 0; padding: 1rem 0; background: transparent !important; font-family: var(--mono); font-size: 0.8125rem; line-height: 1.65; counter-reset: line; }
+    .code code { display: block; min-width: max-content; }
+    .code .line { display: inline-block; width: 100%; padding-right: 1.25rem; }
+    .code .line::before {
+      counter-increment: line; content: counter(line);
+      display: inline-block; width: 3.25rem; padding-right: 1.1rem; text-align: right;
+      color: var(--rule-strong); font-variant-numeric: tabular-nums; user-select: none;
+    }
+
+    /* Following a 3D replay: the lines run in the last few steps are lit, the
+       lines the episode never runs are dimmed, and a line is a link to the next
+       moment it runs. */
+    .code-panel { position: relative; }
+    .code[data-traced] .line { cursor: pointer; }
+    .code[data-traced] .line.cold { opacity: 0.38; cursor: default; }
+    .code .line.on { background: linear-gradient(var(--hl-run), var(--hl-run)) 0 0 / 3px 100% no-repeat, color-mix(in oklch, var(--hl-run) 15%, transparent); }
+    .code .line.on::before { color: var(--hl-run); }
+    & { --hl-run: var(--accent); }
+    .resume {
+      position: absolute; left: 50%; bottom: 1rem; translate: -50% 0; z-index: 2;
+      height: 2.1rem; padding: 0 1rem; border: 0; border-radius: 999px; cursor: pointer;
+      background: var(--ink); color: var(--paper); font-family: var(--sans); font-size: 0.8125rem; font-weight: 600;
+      box-shadow: 0 4px 14px rgb(0 0 0 / 0.18); transition: scale 140ms var(--ease-out);
+    }
+    .resume[hidden] { display: none; }
+    .resume:active { scale: 0.96; }
+
+    /* The episode's phases: runs of steps that run the same code. */
+    .phases { position: relative; height: 1.25rem; margin-top: 0.6rem; border-radius: 5px; background: var(--paper-2); box-shadow: inset 0 0 0 1px var(--rule); }
+    .phases[hidden] { display: none; }
+    .ph { position: absolute; top: 3px; bottom: 3px; padding: 0; border: 0; border-radius: 2px; cursor: pointer;
+          background: color-mix(in oklch, var(--hl-run) 22%, transparent); box-shadow: inset -1px 0 0 var(--paper-2); }
+    .ph:nth-child(even) { background: color-mix(in oklch, var(--hl-run) 34%, transparent); }
+    .ph.cur { background: var(--hl-run); }
+    @media (hover: hover) { .ph:hover { background: color-mix(in oklch, var(--hl-run) 60%, transparent); } }
+    .ph:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .ph-track { position: absolute; inset: -3px 0; overflow: hidden; pointer-events: none; }
+    .ph-head { position: absolute; inset: 0; }
+    .ph-head i { position: absolute; top: 0; bottom: 0; left: -1px; width: 2px; border-radius: 1px; background: var(--ink); }
+    /* One line, kept while the trace is shown, so the page below never shifts. */
+    .ph-methods { display: block; height: 1.5em; margin-top: 0.45rem; font-family: var(--mono); font-size: 0.75rem; line-height: 1.5; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .phases[hidden] + .ph-methods { display: none; }
+    .under .rollout-meta { margin-top: 0.5rem; }
+    .phases:not([hidden]) ~ .rollout-meta { margin-top: 0.35rem; }
+
+    /* The whole listing in miniature at the panel's edge: where the lit lines are. */
+    .code[data-traced] { margin-right: 12px; }
+    .trace-map { position: absolute; right: 3px; width: 6px; display: grid; grid-template-rows: repeat(var(--n), 1fr); cursor: pointer; opacity: 0.9; }
+    .trace-map[hidden] { display: none; }
+    .trace-map i { min-height: 0; border-radius: 1px; }
+    .trace-map i.on { background: var(--hl-run); }
+
+    .side { align-self: start; }
+    .player { aspect-ratio: 4 / 3; background: #0b0c0e; }
+    .player video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #0b0c0e; }
+    .view-toggle {
+      position: absolute; top: 0.6rem; right: 0.6rem; z-index: 2;
+      display: flex; padding: 3px; gap: 2px; border-radius: 999px;
+      background: rgb(18 20 24 / 0.72); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.12);
+    }
+    .view-toggle[hidden] { display: none; }
+    .view-toggle button {
+      height: 1.75rem; padding-inline: 0.8rem; border: 0; border-radius: 999px; cursor: pointer;
+      font-family: var(--sans); font-size: 0.8125rem; font-weight: 600; color: rgb(255 255 255 / 0.72); background: transparent;
+      transition-property: background-color, color, scale; transition-duration: 140ms;
+    }
+    .view-toggle button[aria-pressed='true'] { color: #111; background: #fff; }
+    .view-toggle button:disabled { color: rgb(255 255 255 / 0.3); cursor: not-allowed; }
+    .view-toggle button:not(:disabled):active { scale: 0.95; }
+    .orbit-hint {
+      position: absolute; top: 0.75rem; left: 0.75rem; z-index: 2; margin: 0; pointer-events: none;
+      padding: 0.25rem 0.6rem; border-radius: 999px; font-family: var(--sans); font-size: 0.75rem;
+      color: rgb(255 255 255 / 0.85); background: rgb(18 20 24 / 0.6);
+    }
+    .orbit-hint[hidden] { display: none; }
+    /* Pinned full screen on iPhone: the close button takes the top-right
+       corner, so the view switch moves left of it; both stay in the safe area. */
+    .player.fs-pseudo .view-toggle { top: calc(env(safe-area-inset-top, 0px) + 0.7rem); right: calc(env(safe-area-inset-right, 0px) + 3.6rem); }
+    .player.fs-pseudo .orbit-hint { top: calc(env(safe-area-inset-top, 0px) + 0.75rem); left: calc(env(safe-area-inset-left, 0px) + 0.75rem); }
+    .no-rec { position: absolute; inset: 0; display: grid; place-items: center; padding: 1.5rem; text-align: center; font-family: var(--sans); font-size: 0.875rem; color: oklch(0.75 0.01 245);
+      background: repeating-linear-gradient(135deg, oklch(0.2 0.005 245) 0 10px, oklch(0.18 0.005 245) 10px 20px); }
+    .no-rec[hidden] { display: none; }
+
+    .rollout-meta { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; margin-top: 0.75rem; font-family: var(--sans); font-size: 0.8125rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+    .outcome { font-weight: 600; }
+    .outcome.ok { color: var(--accent-ink); }
+    .outcome.fail { color: var(--ink-2); }
+
+    .score { margin-top: 1.5rem; display: flex; align-items: baseline; gap: 0.5rem; }
+    .score-num { font-size: 2.25rem; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+    .score-of { font-family: var(--sans); font-size: 0.8125rem; color: var(--ink-3); }
+
+    .seedgrid { margin-top: 0.8rem; max-width: 16rem; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 3px; }
+    .seed { position: relative; aspect-ratio: 1; padding: 0; border: 0; border-radius: 2px; cursor: pointer; transition: scale 120ms var(--ease-out); }
+    .seed.ok { background: var(--accent); }
+    .seed.fail { background: transparent; box-shadow: inset 0 0 0 1px var(--rule-strong); }
+    .seed.rec::after { content: ''; position: absolute; inset: 35%; border-radius: 50%; background: var(--paper); }
+    .seed.fail.rec::after { background: var(--ink-2); }
+    .seed[aria-pressed='true'] { outline: 2px solid var(--ink); outline-offset: 2px; z-index: 1; }
+    @media (hover: hover) { .seed:hover { scale: 1.12; } }
+    .seed:active { scale: 0.92; }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; margin-top: 0.8rem; font-family: var(--sans); font-size: 0.75rem; color: var(--ink-3); }
+    .legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .sw { display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 2px; position: relative; }
+    .sw.ok { background: var(--accent); }
+    .sw.fail { box-shadow: inset 0 0 0 1px var(--rule-strong); }
+    .sw.rec { box-shadow: inset 0 0 0 1px var(--rule-strong); }
+    .sw.rec::after { content: ''; position: absolute; inset: 30%; border-radius: 50%; background: var(--ink-2); }
+
+    @media (max-width: 640px) {
+      .m-legend, .legend, .rollout-meta { font-size: 0.8125rem; }
+      .code pre { font-size: 0.78125rem; }
+    }
+    /* A player waiting for its turn to load (whenScrollRests) is an empty
+       iframe, which paints white; the frame's own dark ground shows instead. */
+    .player iframe:not([src]) { visibility: hidden; }
+
+    /* The full matrix needs ~46rem; narrower, it is drawn transposed (tasks
+       down, sessions across) rather than cut off at the right. */
+    .matrix-t { display: none; }
+    @media (max-width: 800px) {
+      .matrix-scroll { display: none; }
+      .matrix-t { display: table; width: 100%; min-width: 0; table-layout: fixed; border-spacing: 3px; margin-inline: -3px; width: calc(100% + 6px); }
+      .matrix-t thead th { font-size: 0.8125rem; padding-bottom: 0.3rem; }
+      .matrix-t thead tr:first-child th { font-weight: 700; color: var(--ink); }
+      .matrix-t th.m-task { width: 7.25rem; vertical-align: middle; text-align: left; padding: 0 0.4rem 0 0; font-size: 0.8125rem; font-weight: 550; color: var(--ink); line-height: 1.25; hyphens: auto; overflow-wrap: break-word; }
+      .matrix-t .m-sn { font-weight: 450; color: var(--ink-3); }
+      .matrix-t .first { border-left: 0.35rem solid transparent; }
+      .matrix-t .m-cell { height: 2.5rem; font-size: 0.875rem; }
+    }
+    @media (max-width: 900px) {
+      .body { grid-template-columns: 1fr; }
+      .side { order: -1; }
+      .code { flex: none; height: auto; max-height: 26rem; }
+    }
+    /* Side by side: the seed grid on the left, the score at its top and the
+       legend at its foot to the right, so the column is filled. */
+    @media (min-width: 901px) {
+      .tally { display: contents; }
+      .side { display: grid; grid-template-columns: minmax(0, 16rem) minmax(7.5rem, 1fr); grid-template-rows: auto auto auto 1fr; column-gap: 1.75rem; }
+      .side > .player, .side > .under { grid-column: 1 / -1; }
+      .seedgrid { grid-column: 1; grid-row: 3 / span 2; margin-top: 1.5rem; }
+      .score { grid-column: 2; grid-row: 3; flex-direction: column; align-items: flex-start; gap: 0.35rem; }
+      .score-num { font-size: 3rem; }
+      .legend { grid-column: 2; grid-row: 4; align-self: end; flex-direction: column; gap: 0.45rem; margin-top: 0; }
+    }
+    /* Stacked, tablet portrait: a full-width 4:3 player would fill the
+       screen, so it shares the row with the tally (score, seeds, legend),
+       whose top meets the player's top. */
+    @media (min-width: 641px) and (max-width: 900px) {
+      .side { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); grid-template-rows: auto 1fr; column-gap: 1.75rem; align-items: start; }
+      .side > .player { grid-column: 1; grid-row: 1; }
+      .side > .under { grid-column: 1; grid-row: 2; }
+      .tally { grid-column: 2; grid-row: 1 / span 2; }
+      .score { margin-top: 0; flex-wrap: wrap; row-gap: 0.25rem; }
+    }
+    /* Stacked but still wide: the seed grid beside the score and legend
+       instead of alone under them. */
+    @media (min-width: 561px) and (max-width: 640px) {
+      .tally { display: grid; grid-template-columns: minmax(0, 1fr) 16rem; grid-template-rows: auto 1fr; column-gap: 2rem; align-items: start; margin-top: 1.5rem; }
+      .score { grid-column: 1; grid-row: 1; margin-top: 0; }
+      .legend { grid-column: 1; grid-row: 2; }
+      .seedgrid { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; }
+    }
+    /* Phones: the grid takes the full width, which also makes the seeds
+       easier to tap. */
+    @media (max-width: 560px) { .seedgrid { max-width: none; } }
+    /* Phones: the code sits right under the player, short enough that both
+       stay on screen while the code follows the replay; the score and the
+       seeds come after. */
+    @media (max-width: 640px) {
+      .body { row-gap: 0; }
+      .side { display: contents; }
+      .side > .player { order: 1; }
+      .side > .under { order: 2; }
+      .code-panel { order: 3; margin-top: 1rem; }
+      .code { max-height: min(26rem, 42svh); }
+      .tally { order: 4; margin-top: 1.75rem; }
+    }
+  }
+</style>

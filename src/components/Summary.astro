@@ -1,0 +1,45 @@
+---
+import { site } from '../lib/data';
+---
+<ul class="text">
+  {site.summary.map((p) => <li>{p}</li>)}
+</ul>
+
+<dl class="figures page">
+  {site.figures.map((f) => (
+    <div class="figure">
+      <dt>{f.label}</dt>
+      <dd class="value">{f.value}</dd>
+      <dd class="note">{f.note}</dd>
+    </div>
+  ))}
+</dl>
+
+<style>
+  .text { width: min(100% - 2 * var(--gutter), var(--measure)); margin-inline: auto; }
+  .text { margin-block: 0; padding-left: 1.2em; }
+  .text li { font-size: 1.1875rem; line-height: 1.6; }
+  .text li + li { margin-top: 0.75em; }
+  .text li::marker { color: var(--ink-3); }
+
+  .figures {
+    margin-top: clamp(2.5rem, 6vw, 3.5rem);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    text-align: center;
+  }
+  .figure { padding: 0.25rem 1rem; display: flex; flex-direction: column; }
+  .figure + .figure { border-left: 1px solid var(--rule); }
+  dt { order: 2; margin-top: 0.45rem; font-family: var(--sans); font-size: 0.9375rem; font-weight: 600; }
+  .value {
+    order: 1; margin: 0;
+    font-size: clamp(2.5rem, 5vw, 3.5rem); line-height: 1;
+    letter-spacing: -0.03em; font-variant-numeric: lining-nums tabular-nums;
+  }
+  .note { order: 3; margin: 0.25rem 0 0; font-family: var(--sans); font-size: 0.8125rem; line-height: 1.45; color: var(--ink-3); }
+
+  @media (max-width: 760px) {
+    .figures { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 1.75rem; }
+    .figure:nth-child(odd) { border-left: 0; }
+  }
+</style>

@@ -1,0 +1,64 @@
+---
+import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
+import Hero from '../components/Hero.astro';
+import Lede from '../components/Lede.astro';
+import DemoVideos from '../components/DemoVideos.astro';
+import Fig2 from '../components/Fig2.astro';
+import Summary from '../components/Summary.astro';
+import Section from '../components/Section.astro';
+import ResultsTable from '../components/ResultsTable.astro';
+import AgentSection from '../components/AgentSection.astro';
+import PolicyExplorer from '../components/PolicyExplorer.astro';
+import TwoRoutes from '../components/TwoRoutes.astro';
+import ComputeSection from '../components/ComputeSection.astro';
+import Citation from '../components/Citation.astro';
+import Footer from '../components/Footer.astro';
+import { agent, results, tasks } from '../lib/data';
+
+const demos = tasks.tasks.filter((t) => t.demo).length;
+
+// The nav names only what a reader jumps to: the videos follow the TL;DR, and the summary and
+// BibTeX close the page, so they are left out.
+const sections = [
+  { id: 'results', label: 'Results' },
+  { id: 'agent', label: 'Coding agent' },
+  { id: 'explorer', label: 'Explorer' },
+  { id: 'compute', label: 'Compute' },
+];
+---
+<Base>
+  <Nav sections={sections} />
+  <Hero />
+  <main>
+    <Lede />
+    <Section id="videos" title="Human demonstrations" band
+      lede={`${demos === tasks.tasks.length ? `One from each of the ${demos} tasks` : `${demos} of the ${tasks.tasks.length} tasks`}, recorded in VR through the whole-body controller the policies are scored with.`}>
+      <Fig2 />
+      <DemoVideos />
+    </Section>
+    <Section id="results" title="Learned policies and coding agents, scored on the same seeds">
+      <Fragment slot="lede">Success rate on {results.generations[0].rows.length} representative tasks, 100 hidden evaluation episodes per checkpoint or program. An episode counts only once the goal state has held for <span class="key">one second</span>.</Fragment>
+      <ResultsTable />
+    </Section>
+    <Section id="agent" title="A program written from one demonstration">
+      <Fragment slot="lede">A cold-start coding agent gets a learned policy’s inputs and the online learners’ {agent.budget_steps.toLocaleString('en')}-step budget, with <span class="key">no IK, no calibration, no external camera</span>, and writes the controller itself.</Fragment>
+      <AgentSection />
+    </Section>
+    <Section id="explorer" title="Every program, every seed" band>
+      <Fragment slot="lede">Two ways to touch a sphere: Astra works from <span class="key">pixels alone</span>; Opus 5.5 <span class="key">recalls the G1’s link offsets</span> from Unitree’s public description and solves inverse kinematics with them.</Fragment>
+      <TwoRoutes />
+      <PolicyExplorer />
+    </Section>
+    <Section id="compute" title="A score is a point on a compute curve">
+      <ComputeSection />
+    </Section>
+    <Section id="summary" title="Summary">
+      <Summary />
+    </Section>
+    <Section id="citation" title="BibTeX" band>
+      <Citation />
+    </Section>
+  </main>
+  <Footer />
+</Base>

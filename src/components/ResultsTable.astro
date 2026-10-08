@@ -1,0 +1,368 @@
+---
+// Success rates, one table per shown result generation (scene lighting),
+// behind a segmented switch when there is more than one; without script only
+// the first, current one shows.
+// Every method column has the same width. Each number ends at the same point
+// in its column (the SE, if any, follows it), so digits line up down each
+// column; the pill around a cell hugs what it holds, its left edge set from
+// the digit count. A column with no SE (π0.5) centres a three-digit number
+// instead. The best value in each row is bold on a pill: in the
+// series colour of the compute chart for the coding agents, neutral for the
+// rest (the accent is too close to Astra's blue); the weight carries it where
+// colour cannot.
+import { results } from '../lib/data';
+import { siClaudecode } from 'simple-icons';
+import { claude, codex, openai } from '../lib/protocolMarks';
+
+const marks = {
+  claude: { d: claude, box: '0 0 24 24', fill: '#D97757' },
+  openai: { d: openai, box: '0 0 90 90', fill: 'currentColor' },
+} as const;
+// Harness marks for the hover card over a coding agent's header, in colour:
+// Claude Code's pixel mark in its brand coral (simple-icons), Codex in a
+// blue-to-violet gradient.
+const harnessMarks = {
+  'claude-code': { d: siClaudecode.path, box: '0 0 24 24', fill: `#${siClaudecode.hex}` },
+  codex: { d: codex, box: '0 0 90 90', fill: 'url(#codex-grad)' },
+} as const;
+const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
+const best = (vals: (number | null)[]) => Math.max(...vals.filter((v): v is number => v !== null));
+const tables = results.generations.filter((g) => !g.hidden).map((g) => {
+  const methods = g.groups.flatMap((grp) => grp.methods.map((id) => g.methods.find((m) => m.id === id)!));
+  const withSe = new Set(methods.filter((m) => g.rows.some((r) => r.values[m.id]?.se != null)).map((m) => m.id));
+  return { ...g, methods, withSe, meanBest: best(methods.map((m) => g.mean[m.id])) };
+});
+// Digits are tabular, one ch each; the pill starts that many ch before the
+// column's alignment point.
+const span = (text: string, se: boolean) => `--n: ${text.length}${se ? '' : '; --b: var(--b-solo)'}`;
+const tint = (series?: string) => (series ? `--hl: var(--series-${series})` : undefined);
+// Phones show every column at once, so headers there take their shortest
+// form: the agents by model name alone, the groups by their initials.
+const tinyMethod: Record<string, string> = { opus: 'Opus', astra: 'Astra' };
+const tinyGroup: Record<string, string> = { 'Imitation learning': 'IL', 'Demo-driven RL': 'RL', 'Coding agent': 'Agent' };
+---
+<div class="results page">
+  <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+    <defs><linearGradient id="codex-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5B8CFF" /><stop offset="1" stop-color="#A36BFF" /></linearGradient></defs>
+  </svg>
+  {tables.length > 1 && (
+    <div class="bar-top">
+      <span class="kicker">Scene lighting</span>
+      <div class="seg" role="group" aria-label="Scene lighting" data-switch hidden>
+        {tables.map((g, i) => <button type="button" data-gen={g.id} aria-pressed={i === 0 ? 'true' : 'false'}>{g.label}</button>)}
+      </div>
+    </div>
+  )}
+  {tables.map((g, gi) => (
+    <div class="gen" data-gen={g.id} hidden={gi !== 0}>
+      <div class="scroller" tabindex="0" role="region" aria-label={`Success rates, ${g.label.toLowerCase()}, scrollable`}>
+        <table style={`--n: ${g.methods.length}`}>
+          <caption class="visually-hidden">{g.caption}{g.footnote && <> {g.footnote}</>}</caption>
+          <colgroup>
+            <col class="c-task" />
+            {g.methods.map((m) => <col class:list={{ 'c-agent': m.emphasis }} />)}
+          </colgroup>
+          <thead>
+            <tr class="groups">
+              <td class="task-col"></td>
+              {g.groups.map((grp) => (
+                <th scope="colgroup" colspan={grp.methods.length}><span class="kicker">{tinyGroup[grp.label] ? <><span class="full">{grp.label}</span><span class="tiny">{tinyGroup[grp.label]}</span></> : grp.label}</span></th>
+              ))}
+            </tr>
+            <tr class="methods">
+              <th scope="col" class="task-col"><span class="kicker">Task</span></th>
+              {g.methods.map((m, i) => {
+                const mk = m.logo && marks[m.logo];
+                const h = m.harness, hm = h && harnessMarks[h.mark], tipId = `harness-${g.id}-${m.id}`;
+                const first = m.emphasis && !g.methods[i - 1]?.emphasis;
+                const last = m.emphasis && !g.methods[i + 1]?.emphasis;
+                return (
+                  <th scope="col" class:list={{ agent: m.emphasis, first, last, pending: g.pending.includes(m.id), 'has-harness': !!h }}
+                      title={m.short && !h ? m.label : undefined} tabindex={h ? 0 : undefined} aria-describedby={h ? tipId : undefined} data-harness={h ? '' : undefined}>
+                    <span class="mark" aria-hidden="true">
+                      {mk && <svg viewBox={mk.box}><path d={mk.d} fill={mk.fill} fill-rule="evenodd" /></svg>}
+                    </span>
+                    <span class="name">{tinyMethod[m.id] ? <><span class="full">{m.short ?? m.label}</span><span class="tiny">{tinyMethod[m.id]}</span></> : (m.short ?? m.label)}</span>
+                    <span class="sub">{m.sublabel ?? ' '}</span>
+                    {h && hm && (
+                      <span class="htip" id={tipId} role="tooltip">
+                        <span class="hmodel">{m.label}</span>
+                        <span class="hrow">
+                          <svg class="hmark" viewBox={hm.box} aria-hidden="true"><path d={hm.d} fill={hm.fill} fill-rule="evenodd" /></svg>
+                          <span class="hname">{h.name}</span>
+                          <span class="hver">v{h.version}</span>
+                        </span>
+                      </span>
+                    )}
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {g.rows.map((r) => {
+              const top = best(g.methods.map((m) => r.values[m.id]?.mean ?? null));
+              return (
+                <tr>
+                  <th scope="row" class="task-col">{r.label}</th>
+                  {g.methods.map((m) => {
+                    const c = r.values[m.id];
+                    if (!c) {
+                      const tip = `${m.label} on ${r.label}: not yet reported on this scene`;
+                      return (
+                        <td class:list={['pending', { agent: m.emphasis }]}>
+                          <span class="cell" tabindex="0" data-tip={tip} aria-label={tip}><span class="val"><span class="num">–</span></span></span>
+                        </td>
+                      );
+                    }
+                    const tip = `${m.label} on ${r.label}: ${fmt(c.mean)}${c.se !== null ? ` ± ${fmt(c.se)}` : ''}%${c.partial ? ' (last-five-available window)' : ''}`;
+                    return (
+                      <td class:list={{ agent: m.emphasis, best: c.mean === top }} style={tint(m.series)}>
+                        <span class="cell" tabindex="0" data-tip={tip} aria-label={tip}>
+                          <span class="val" style={span(fmt(c.mean), g.withSe.has(m.id))}>
+                            <span class="num">{fmt(c.mean)}{c.partial && <sup>†</sup>}</span>
+                            {c.se !== null && <span class="se">±{fmt(c.se)}</span>}
+                          </span>
+                        </span>
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th scope="row" class="task-col">Mean</th>
+              {g.methods.map((m) => {
+                const v = g.mean[m.id];
+                return (
+                  <td class:list={{ agent: m.emphasis, best: v !== null && v === g.meanBest, pending: v === null }} style={tint(m.series)}>
+                    <span class="cell"><span class="val" style={span(v === null ? '–' : fmt(v), g.withSe.has(m.id))}><span class="num">{v === null ? '–' : fmt(v)}</span></span></span>
+                  </td>
+                );
+              })}
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <p class="caption">{g.caption}</p>
+      {g.footnote && (
+        <details class="notes">
+          <summary>How each number is measured</summary>
+          <p class="caption">{g.footnote}</p>
+        </details>
+      )}
+    </div>
+  ))}
+</div>
+
+<script>
+  for (const sw of document.querySelectorAll<HTMLElement>('#results [data-switch]')) {
+    const buttons = [...sw.querySelectorAll<HTMLButtonElement>('button')];
+    const panels = [...sw.closest('.results')!.querySelectorAll<HTMLElement>('.gen')];
+    const show = (id: string) => {
+      buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.gen === id)));
+      panels.forEach((p) => (p.hidden = p.dataset.gen !== id));
+    };
+    buttons.forEach((b) => b.addEventListener('click', () => show(b.dataset.gen!)));
+    sw.hidden = false;
+  }
+  // The harness card: fixed to the viewport so the table's scroller does not
+  // clip it; above the header, or below it when the header is near the top.
+  // A mouse shows it on hover; touch and keyboard, on focus.
+  for (const th of document.querySelectorAll<HTMLElement>('#results th[data-harness]')) {
+    const tip = th.querySelector<HTMLElement>('.htip')!;
+    const show = () => {
+      const r = th.getBoundingClientRect();
+      const below = r.top < 150;
+      // Centred over the header, but kept 8px inside the screen.
+      const half = tip.offsetWidth / 2;
+      tip.style.left = `${Math.min(Math.max(r.left + r.width / 2, half + 8), innerWidth - half - 8)}px`;
+      tip.style.top = `${below ? r.bottom + 8 : r.top - 8}px`;
+      tip.classList.toggle('below', below);
+      tip.classList.add('show');
+    };
+    const hide = () => tip.classList.remove('show');
+    th.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') show(); });
+    th.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && document.activeElement !== th) hide(); });
+    th.addEventListener('focus', show);
+    th.addEventListener('blur', hide);
+    addEventListener('scroll', hide, { passive: true });
+    th.closest('.scroller')?.addEventListener('scroll', hide, { passive: true });
+  }
+  for (const s of document.querySelectorAll<HTMLElement>('#results .scroller')) {
+    const mark = () => s.toggleAttribute('data-scrolled', s.scrollLeft > 0);
+    s.addEventListener('scroll', mark, { passive: true });
+    mark();
+  }
+</script>
+
+<style>
+  .results { --task-w: 10.5rem; --col-w: 6.5rem; --pad: 0.75rem; font-family: var(--sans); }
+  .tiny { display: none; }
+
+  /* Segmented switch. */
+  .bar-top { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; }
+  .seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px; background: var(--paper-3); }
+  .seg[hidden] { display: none; }
+  .seg button {
+    padding: 0.3rem 0.85rem; border: 0; border-radius: 999px;
+    font: inherit; font-size: 0.8125rem; font-weight: 550; color: var(--ink-3); background: transparent; cursor: pointer;
+    transition: color 140ms var(--ease-out), background-color 140ms var(--ease-out);
+  }
+  .seg button:hover { color: var(--ink); }
+  .seg button[aria-pressed='true'] { color: var(--ink); background: var(--paper); box-shadow: var(--shadow-lift); }
+  .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .scroller { overflow-x: auto; overscroll-behavior-x: contain; margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); }
+  table {
+    width: 100%; min-width: calc(var(--task-w) + var(--n) * var(--col-w));
+    table-layout: fixed; border-collapse: separate; border-spacing: 0;
+    font-size: 0.875rem; font-variant-numeric: tabular-nums;
+  }
+  col.c-task { width: var(--task-w); }
+  th, td { padding: 0; font-weight: 400; }
+
+  /* Header. Group labels sit centred over their columns with a hairline;
+     method headers are three fixed lines (mark, name, sublabel), so names
+     share a baseline whether or not a column has a mark. */
+  thead .groups th { padding: 0 var(--pad) 0.6rem; vertical-align: bottom; text-align: center; }
+  thead .groups th .kicker { display: block; padding-bottom: 0.45rem; border-bottom: 1px solid var(--rule-strong); }
+  thead .methods th { padding: 0.8rem 0.25rem 0.75rem; text-align: center; vertical-align: bottom; border-bottom: 1px solid var(--rule-strong); }
+  thead .methods th.task-col { text-align: left; padding-left: 0; }
+  .mark { display: flex; justify-content: center; height: 1.1rem; margin-bottom: 0.35rem; }
+  .mark svg { width: 1.1rem; height: 1.1rem; color: var(--ink); }
+  .name { display: block; font-weight: 650; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.005em; }
+  .sub { display: block; margin-top: 0.1rem; font-size: 0.6875rem; letter-spacing: 0.02em; color: var(--ink-3); }
+  th.pending .name { color: var(--ink-3); }
+
+  /* Hover card over a coding agent's header: its full name, then the harness. */
+  th.has-harness { cursor: default; }
+  th.has-harness:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  /* Parked at the corner until placed: while its section is still sliding in,
+     the section's transform makes it lay out in the page, and a card left at
+     a header near the right edge would widen a phone's page. */
+  .htip {
+    position: fixed; left: 0; top: 0; z-index: 40; translate: -50% -100%;
+    display: grid; gap: 0.35rem; padding: 0.55rem 0.75rem 0.6rem; text-align: left; white-space: nowrap;
+    background: var(--paper); border: 1px solid var(--rule-strong); border-radius: var(--r-md); box-shadow: var(--shadow-lift);
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity 140ms var(--ease-out), visibility 0s linear 140ms;
+  }
+  .htip.below { translate: -50% 0; }
+  .htip.show { opacity: 1; visibility: visible; transition: opacity 140ms var(--ease-out); }
+  .hmodel { font-size: 0.75rem; font-weight: 600; color: var(--ink-2); }
+  .hrow { display: flex; align-items: center; gap: 0.45rem; }
+  .hmark { width: 1.15rem; height: 1.15rem; flex: none; }
+  .hname { font-size: 0.875rem; font-weight: 650; color: var(--ink); }
+  .hver { font-family: var(--mono); font-size: 0.75rem; color: var(--ink-3); }
+
+  /* Body. Rules sit on the cells, not the rows, so the sticky column carries its own. */
+  tbody > tr > * { border-bottom: 1px solid var(--rule); }
+  .task-col { text-align: left; padding-right: 1rem; white-space: nowrap; font-weight: 500; color: var(--ink); }
+  /* The task column stays put while the methods scroll under it, header
+     included. It sticks at the scroller's content edge, so a shadow in the
+     page colour covers the gutter to its left, where scrolled cells would
+     otherwise show; once scrolled, a rule marks its right edge. */
+  .task-col { position: sticky; left: 0; background: var(--paper); z-index: 1; box-shadow: calc(-1 * var(--gutter) - 2px) 0 0 var(--paper); }
+  .scroller[data-scrolled] .task-col { box-shadow: calc(-1 * var(--gutter) - 2px) 0 0 var(--paper), inset -1px 0 var(--rule-strong); }
+  thead .task-col { z-index: 2; }
+
+  /* Coding agents share one quiet panel. */
+  td.agent, th.agent { background: var(--paper-2); }
+  /* The panel opens with rounded top corners and room above the marks. */
+  thead .methods th.agent.first { border-top-left-radius: var(--r-md); }
+  thead .methods th.agent.last { border-top-right-radius: var(--r-md); }
+
+  .cell { position: relative; display: block; padding: 0.5rem var(--pad); }
+  /* --b is where the last digit ends: just left of centre when an SE follows,
+     so a three-digit value and a two-digit SE sit centred; with no SE, where
+     a three-digit value is centred. The best cell's ch is measured in bold,
+     like its digits. */
+  .val {
+    --pad-x: 0.55rem; --b-se: calc(50% - 0.1ch - 0.125rem); --b-solo: calc(50% + 1.5ch); --b: var(--b-se);
+    display: flex; align-items: baseline; gap: 0.25rem;
+    width: fit-content; margin-left: calc(var(--b) - var(--n) * 1ch - var(--pad-x)); padding: 0.2rem var(--pad-x); border-radius: 999px;
+  }
+  .best .val { font-weight: 700; }
+  tfoot .val { font-weight: 600; }
+  tfoot .best .val { font-weight: 800; }
+  .se { font-weight: 400; }
+  .num { color: var(--ink); }
+  .num sup { font-size: 0.7em; color: var(--ink-3); }
+  .se { font-size: 0.6875rem; color: var(--ink-3); }
+  .best { --hl-ink: color-mix(in oklab, var(--hl, var(--ink)) 78%, var(--ink)); }
+  .best .val { background: color-mix(in oklab, var(--hl, var(--ink)) 15%, transparent); }
+  .best:not([style]) .val { background: color-mix(in oklab, var(--ink) 8%, transparent); }
+  .best .num { font-weight: 700; color: var(--hl-ink); }
+  .best .se { color: var(--hl-ink); opacity: 0.8; }
+  .pending .num { color: var(--rule-strong); }
+
+  tfoot > tr > * { border-bottom: 1px solid var(--rule-strong); }
+  tfoot .cell { padding-block: 0.65rem; }
+  tfoot th { font-weight: 650; }
+  tfoot .num { font-weight: 600; }
+  tfoot .best .num { font-weight: 800; }
+
+  /* Hover / focus tooltip. */
+  .cell[data-tip]::before {
+    content: attr(data-tip);
+    position: absolute; left: 0; bottom: calc(100% - 0.2rem); z-index: 3;
+    width: max-content; max-width: 16rem;
+    padding: 0.35rem 0.55rem; border-radius: var(--r-sm);
+    font-size: 0.75rem; line-height: 1.35; color: var(--paper); background: var(--ink);
+    opacity: 0; translate: 0 4px; pointer-events: none;
+    transition-property: opacity, translate; transition-duration: 140ms; transition-timing-function: var(--ease-out);
+  }
+  /* Near the right edge the tip opens leftwards: a hidden tip still counts as
+     overflow, and one hanging past the table would widen the scroll range. */
+  td:nth-last-child(-n + 2) .cell[data-tip]::before { left: auto; right: 0; }
+  .cell[data-tip]:focus-visible::before { opacity: 1; translate: 0 0; }
+  .cell:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: var(--r-sm); }
+  @media (hover: hover) {
+    .cell[data-tip]:hover::before { opacity: 1; translate: 0 0; }
+    tbody tr:hover > td:not(.agent) { background: color-mix(in oklch, var(--paper-2) 60%, var(--paper)); }
+    tbody tr:hover > td.agent { background: var(--paper-3); }
+  }
+
+  .caption { margin-top: 1rem; max-width: 72ch; font-size: 0.8125rem; line-height: 1.55; color: var(--ink-3); }
+  .notes { margin-top: 0.5rem; }
+  .notes .caption { margin-top: 0.4rem; }
+  summary { cursor: pointer; width: max-content; max-width: 100%; font-size: 0.8125rem; font-weight: 600; color: var(--ink-2); }
+  summary:hover { color: var(--ink); }
+  summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-sm); }
+
+  /* Phones: the whole table on one screen, no sideways scrolling. Every
+     column narrows to its number with the SE in small type beneath it,
+     headers take their short forms, and task names wrap. */
+  @media (max-width: 640px) {
+    .results { --task-w: 5.4rem; --col-w: 2.15rem; --pad: 0; }
+    /* Columns share whatever width there is, down to about 360px screens;
+       narrower still, the table scrolls as before. */
+    table { font-size: 0.8125rem; min-width: calc(var(--task-w) + var(--n) * 1.9rem); }
+    .full { display: none; }
+    .tiny { display: inline; }
+    .mark, .sub { display: none; }
+    thead .groups th { padding: 0 1px 0.35rem; }
+    thead .groups th .kicker { padding-bottom: 0.3rem; letter-spacing: 0.04em; }
+    thead .methods th { padding: 0.45rem 0 0.5rem; }
+    .name { white-space: normal; overflow-wrap: anywhere; font-size: 0.75rem; line-height: 1.2; letter-spacing: -0.01em; }
+    tbody .task-col, tfoot .task-col { white-space: normal; line-height: 1.25; padding-right: 0.35rem; font-size: 0.8125rem; }
+    .cell { padding-block: 0.4rem; }
+    tfoot .cell { padding-block: 0.5rem; }
+    .val { flex-direction: column; align-items: center; gap: 0; margin-inline: auto; padding: 0.15rem 0.3rem; border-radius: 0.6rem; }
+    .num { line-height: 1.25; }
+    .se { font-size: 0.6875rem; line-height: 1.1; text-align: center; }
+    /* Narrower tips, opening leftwards from all but the first three columns,
+       so none reaches past the screen. */
+    .cell[data-tip]::before { max-width: 12rem; }
+    td:nth-last-child(-n + 5) .cell[data-tip]::before { left: auto; right: 0; }
+    .task-col { box-shadow: none; }
+  }
+  @media (max-width: 380px) {
+    .results { --task-w: 4.9rem; }
+    table { min-width: calc(var(--task-w) + var(--n) * 1.8rem); }
+    .val { padding-inline: 0.2rem; }
+  }
+</style>

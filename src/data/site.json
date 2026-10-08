@@ -1,0 +1,122 @@
+{
+  "title": "BiGym 2.0",
+  "titleAccent": "2.0",
+  "subtitle": "Benchmarking Learned and Agent-Developed Policies for Humanoid Household Manipulation",
+  "description": "A Unitree G1 benchmark of 20 household tasks with a frozen whole-body controller in the loop, 60 human VR demonstrations per task, and a coding-agent track scored on the same hidden seeds as learned policies.",
+  "lede": [
+    "BiGym 2.0 is a household loco-manipulation benchmark: 20 tasks on the Unitree G1, with 60 human VR demonstrations each.",
+    "From one demonstration, GPT-6 Astra and Claude Opus 5.5 write controllers that beat every demo-driven RL baseline on the nine-task mean and rival imitation learning,",
+    "learned policies still lead on precise object rearrangement."
+  ],
+  "venue": null,
+  "authors": [
+    {
+      "name": "Zexi Zhang",
+      "url": "https://nagi.fun",
+      "affiliations": [
+        1
+      ],
+      "equal": true
+    },
+    {
+      "name": "Zecheng Zhu",
+      "url": null,
+      "affiliations": [
+        1
+      ],
+      "equal": true
+    },
+    {
+      "name": "Zidong Chen",
+      "url": null,
+      "affiliations": [
+        1
+      ],
+      "equal": false
+    },
+    {
+      "name": "Zulkhuu Tuya",
+      "url": null,
+      "affiliations": [
+        1
+      ],
+      "equal": false
+    },
+    {
+      "name": "Stephen James",
+      "url": "https://stepjam.github.io/",
+      "affiliations": [
+        1
+      ],
+      "equal": false
+    }
+  ],
+  "affiliations": [
+    {
+      "id": 1,
+      "name": "Department of Computing, Imperial College London"
+    }
+  ],
+  "logos": [],
+  "links": [
+    {
+      "label": "Paper",
+      "url": "https://arxiv.org/abs/2610.07594",
+      "kind": "arxiv"
+    },
+    {
+      "label": "Code",
+      "url": "https://github.com/swirl-uk/BiGym2",
+      "kind": "github"
+    },
+    {
+      "label": "Dataset",
+      "url": "https://huggingface.co/datasets/SWIRL-Lab/bigym-g1-native60",
+      "kind": "huggingface"
+    },
+    {
+      "label": "YouTube",
+      "url": null,
+      "kind": "youtube"
+    },
+    {
+      "label": "Bilibili",
+      "url": null,
+      "kind": "bilibili"
+    }
+  ],
+  "hero": {
+    "video": "hero.mp4",
+    "poster": "hero.jpg",
+    "alt": "Twenty BiGym 2.0 tasks running side by side; the camera flies through the scenes and rises to an overview."
+  },
+  "summary": [
+    "BiGym 2.0: 20 household tasks on the Unitree G1 under whole-body control, with 60 human VR demonstrations per task.",
+    "Four kinds of policy on the same inputs and hidden seeds: vision-language-action fine-tuning, imitation learning, demo-driven reinforcement learning, and coding agents that write a program from one demonstration.",
+    "Coding agents handle spatial variation well but struggle to keep physical contact; learned policies show the reverse, and multi-object transport stays hard for all of them."
+  ],
+  "figures": [
+    {
+      "value": "20",
+      "label": "household tasks",
+      "note": "reaching, table-top, dishwasher, kitchen counter"
+    },
+    {
+      "value": "1,200",
+      "label": "human VR demonstrations",
+      "note": "60 per task, full simulator state per frame"
+    },
+    {
+      "value": "100",
+      "label": "hidden evaluation seeds",
+      "note": "bit-exact replay, one protocol for every method"
+    },
+    {
+      "value": "101k",
+      "label": "step budget",
+      "note": "shared by online learners and the coding agents"
+    }
+  ],
+  "bibtex": "@article{zhang2026bigym2,\n  title   = {BiGym 2.0: Benchmarking Learned and Agent-Developed Policies for Humanoid Household Manipulation},\n  author  = {Zhang, Zexi and Zhu, Zecheng and Chen, Zidong and Tuya, Zulkhuu and James, Stephen},\n  journal = {arXiv preprint arXiv:2610.07594},\n  year    = {2026}\n}",
+  "acknowledgements": "BiGym 2.0 builds on <a href=\"https://github.com/NeuracoreAI/bigym\">BiGym</a> by Chernyadev et al. The lower-body controller is NVIDIA's <a href=\"https://github.com/NVlabs/GR00T-WholeBodyControl\">GR00T-WBC</a>."
+}

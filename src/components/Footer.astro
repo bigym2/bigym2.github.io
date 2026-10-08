@@ -1,0 +1,24 @@
+---
+import { site } from '../lib/data';
+import Logo from './Logo.astro';
+const year = new Date().getFullYear();
+---
+<footer class="footer">
+  <div class="page row">
+    <p class="ack" set:html={site.acknowledgements} />
+  </div>
+  <div class="page row small">
+    <span class="sign"><Logo size={18} /><span>{site.title} · © {year} {site.affiliations[0]?.name}</span></span>
+    <a href="#top">Back to top</a>
+  </div>
+</footer>
+
+<style>
+  .footer { margin-top: clamp(4rem, 9vw, 7rem); padding-block: 2.5rem 3rem; border-top: 1px solid var(--rule); font-family: var(--sans); font-size: 0.875rem; color: var(--ink-2); padding-bottom: calc(3rem + env(safe-area-inset-bottom)); }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; }
+  .small { margin-top: 1.25rem; font-size: 0.8125rem; color: var(--ink-3); }
+  .ack { max-width: 62ch; }
+  .sign { display: inline-flex; align-items: center; gap: 0.5rem; }
+  .sign :global(.logo) { flex: none; color: var(--ink-2); }
+  @media (max-width: 520px) { .small { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+</style>

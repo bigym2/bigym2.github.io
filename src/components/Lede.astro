@@ -1,0 +1,32 @@
+---
+// The first thing under the title, as a TL;DR: what BiGym 2.0 is, then the
+// headline finding and, after a marked "but", its limit. A short summary closes the page.
+import { site } from '../lib/data';
+
+const [what, finding, but] = site.lede;
+// Hyphenated words (GPT-6, reinforcement-learning, multi-object) must not
+// break at their hyphen.
+const keep = (text: string) => text.split(/(\S*\w-\w\S*)/).map((part, i) => (i % 2 ? { nw: part } : { t: part }));
+---
+<div class="lede page">
+  <p class="tldr">
+    <span class="tag">TL;DR</span>
+    {keep(what).map((p) => ('nw' in p ? <span class="nw">{p.nw}</span> : p.t))}{' '}
+    <span class="claim">{keep(finding).map((p) => ('nw' in p ? <span class="nw">{p.nw}</span> : p.t))}{but && <> <span class="but">but</span> {keep(but).map((p) => ('nw' in p ? <span class="nw">{p.nw}</span> : p.t))}</>}</span>
+  </p>
+</div>
+
+<style>
+  .lede { max-width: 46rem; padding-block: clamp(2.75rem, 6vw, 4rem); text-align: center; }
+  /* One paragraph at one size: the label, what BiGym 2.0 is, then the
+     finding, set darker and heavier rather than larger. */
+  .tldr {
+    margin: 0; font-family: var(--sans); font-size: clamp(1.125rem, 2vw, 1.375rem); line-height: 1.55;
+    color: var(--ink-2); text-wrap: balance;
+  }
+  .tag { margin-right: 0.35em; font-weight: 750; letter-spacing: 0.01em; color: var(--accent-ink); }
+  .claim { font-weight: 600; color: var(--ink); }
+  /* Stephen (10/08): the limit of the agents' result, with its "but" marked */
+  .but { font-weight: 800; color: var(--accent-ink); text-decoration: underline; text-underline-offset: 0.18em; text-decoration-thickness: 2px; }
+  .nw { white-space: nowrap; }
+</style>

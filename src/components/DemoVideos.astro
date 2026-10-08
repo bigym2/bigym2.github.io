@@ -1,0 +1,188 @@
+---
+// Human VR demonstrations, one clip per task that has one in tasks.json, in a
+// single row that scrolls sideways: three to a screen on a wide one, aligned
+// with the column, their neighbours fading out into the margins. While the row
+// is on screen it steps on one clip every few seconds (not with reduced motion,
+// not while the pointer is on it, and never again once the reader has moved
+// it); the group buttons jump to a group, the arrows page through. Each clip
+// plays while it is on screen; clips sped up for length carry their rate.
+// Reaching goes last: its scenes are the robot alone.
+import { tasks } from '../lib/data';
+import AutoVideo from './AutoVideo.astro';
+
+const order = [...tasks.groups.filter((g) => g.id !== 'reaching'), ...tasks.groups.filter((g) => g.id === 'reaching')];
+const clips = order.flatMap((g) => tasks.tasks.filter((t) => t.group === g.id).flatMap((t) => (t.demo ? [{ ...t, demo: t.demo }] : [])));
+const groups = order.filter((g) => clips.some((c) => c.group === g.id));
+const label = (name: string) => name.charAt(0).toUpperCase() + name.slice(1);
+const chevron = (d: string) => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+---
+<div class="demos" data-demos>
+  <div class="track" data-track tabindex="0" role="region" aria-roledescription="carousel"
+    aria-label={`Human VR demonstrations, one for each of ${clips.length} tasks`}>
+    <ul>
+      {clips.map((t, i) => (
+        <li data-group={t.group} aria-roledescription="slide" aria-label={`${i + 1} of ${clips.length}`}>
+          <figure>
+            <div class="frame">
+              <AutoVideo src={t.demo.video} poster={t.demo.poster} width={768} height={576}
+                label={`Human VR demonstration of ${t.name}: ${t.instruction}`} />
+              {t.demo.speed !== 1 && <span class="speed">{t.demo.speed}×</span>}
+            </div>
+            <figcaption><b>{label(t.name)}</b><span>{t.instruction}</span></figcaption>
+          </figure>
+        </li>
+      ))}
+    </ul>
+  </div>
+  <div class="bar wrap">
+    <div class="groups" role="group" aria-label="Jump to a group of tasks">
+      {groups.map((g) => (
+        <button type="button" data-jump={g.id} aria-pressed="false">{g.label}<span>{clips.filter((c) => c.group === g.id).length}</span></button>
+      ))}
+    </div>
+    <div class="pager">
+      <span class="count" data-count aria-live="polite"></span>
+      <button type="button" class="arrow" data-step="-1" aria-label="Previous demonstrations" set:html={chevron('M15 6l-6 6 6 6')} />
+      <button type="button" class="arrow" data-step="1" aria-label="Next demonstrations" set:html={chevron('M9 6l6 6-6 6')} />
+    </div>
+  </div>
+</div>
+
+<script>
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const EVERY = 5000;   // ms between automatic steps: with three on screen, each clip stays about 15 s
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-demos]')) {
+    const track = root.querySelector<HTMLElement>('[data-track]')!;
+    const list = track.querySelector('ul')!;
+    const items = [...list.children] as HTMLElement[];
+    const chips = [...root.querySelectorAll<HTMLButtonElement>('[data-jump]')];
+    const [prev, next] = root.querySelectorAll<HTMLButtonElement>('[data-step]');
+    const count = root.querySelector<HTMLElement>('[data-count]')!;
+    const n = items.length;
+
+    // one step: a clip and the gap after it; how many fit in the column
+    const step = () => (n > 1 ? items[1].offsetLeft - items[0].offsetLeft : track.clientWidth);
+    const per = () => {
+      const pad = parseFloat(getComputedStyle(list).paddingLeft);
+      return Math.max(1, Math.floor((track.clientWidth - 2 * pad + 1) / step() + 0.05));
+    };
+    const last = () => Math.max(0, n - per());
+    const at = () => Math.min(last(), Math.round(track.scrollLeft / step()));
+    // where a smooth scroll is heading, so a second press while it moves counts from there
+    let target: number | null = null;
+    const from = () => target ?? at();
+    const go = (i: number) => {
+      target = Math.max(0, Math.min(last(), i));
+      track.scrollTo({ left: target * step(), behavior: reduce.matches ? 'auto' : 'smooth' });
+    };
+
+    let frame = 0;
+    function update() {
+      frame = 0;
+      if (target !== null && Math.abs(track.scrollLeft - target * step()) < 2) target = null;
+      const i = at(), k = per();
+      count.textContent = k > 1 ? `${i + 1}–${Math.min(n, i + k)} / ${n}` : `${i + 1} / ${n}`;
+      prev.disabled = i <= 0;
+      next.disabled = i >= last();
+      const g = items[i].dataset.group;
+      for (const c of chips) c.setAttribute('aria-pressed', String(c.dataset.jump === g));
+    }
+    track.addEventListener('scroll', () => { frame ||= requestAnimationFrame(update); }, { passive: true });
+    new ResizeObserver(update).observe(track);
+
+    // the reader's hand: any of these ends the automatic stepping
+    let manual = false, hover = false, seen = false;
+    const stop = () => { manual = true; };
+    // a hand on the row takes over from any scroll still under way
+    track.addEventListener('pointerdown', () => { target = null; }, { passive: true });
+    track.addEventListener('wheel', () => { target = null; }, { passive: true });
+    for (const ev of ['pointerdown', 'wheel', 'keydown', 'touchstart'] as const) track.addEventListener(ev, stop, { passive: true });
+    prev.addEventListener('click', () => { stop(); go(from() - per()); });
+    next.addEventListener('click', () => { stop(); go(from() + per()); });
+    for (const c of chips) c.addEventListener('click', () => {
+      stop();
+      go(items.findIndex((it) => it.dataset.group === c.dataset.jump));
+    });
+    root.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') hover = true; });
+    root.addEventListener('pointerleave', () => { hover = false; });
+    new IntersectionObserver(([e]) => { seen = e.isIntersecting; }, { threshold: 0.6 }).observe(track);
+
+    setInterval(() => {
+      if (manual || hover || !seen || reduce.matches || document.hidden || root.contains(document.activeElement)) return;
+      go(from() >= last() ? 0 : from() + 1);
+    }, EVERY);
+    update();
+  }
+</script>
+
+<style>
+  /* The column is the page's wide one; the row runs the full width of the
+     section, padded so its first clip starts at the column's edge. */
+  .demos {
+    container-type: inline-size;
+    --gap: clamp(0.75rem, 2vw, 1.25rem);
+    --col: min(100cqw - 2 * var(--gutter), var(--wide));
+    --pad: calc((100cqw - var(--col)) / 2);
+    --per: 3;
+  }
+  .track {
+    overflow-x: auto; overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory; scroll-padding-inline: var(--pad);
+    scrollbar-width: none;
+    /* the neighbours outside the column fade into the margins */
+    mask-image: linear-gradient(90deg, transparent, #000 var(--pad), #000 calc(100% - var(--pad)), transparent);
+  }
+  .track::-webkit-scrollbar { display: none; }
+  .track:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: var(--r-md); }
+  ul {
+    list-style: none; margin: 0; padding: 0 var(--pad);
+    display: flex; gap: var(--gap); width: max-content;
+  }
+  li { flex: none; width: calc((var(--col) - (var(--per) - 1) * var(--gap)) / var(--per)); scroll-snap-align: start; }
+  figure { margin: 0; }
+  .frame { position: relative; overflow: hidden; border-radius: var(--r-md); background: #0b0c0e; aspect-ratio: 4 / 3; }
+  .frame :global(video) { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .speed {
+    position: absolute; top: 0.5rem; right: 0.5rem;
+    padding: 0.1rem 0.45rem; border-radius: 999px;
+    font-family: var(--sans); font-size: 0.75rem; font-weight: 700; font-variant-numeric: tabular-nums;
+    color: #fff; background: rgb(0 0 0 / 0.55);
+  }
+  figcaption { margin-top: 0.6rem; display: grid; gap: 0.15rem; font-family: var(--sans); font-size: 0.8125rem; line-height: 1.45; color: var(--ink-3); }
+  figcaption b { font-size: 0.9375rem; font-weight: 650; color: var(--ink); }
+
+  .bar { margin-top: clamp(1rem, 2.5vw, 1.5rem); display: flex; align-items: center; justify-content: space-between; gap: 0.75rem 1rem; flex-wrap: wrap; }
+  .groups { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+  .groups button {
+    appearance: none; border: 1px solid var(--rule); background: transparent; color: var(--ink-2); cursor: pointer;
+    font-family: var(--sans); font-size: 0.8125rem; font-weight: 600; line-height: 1;
+    padding: 0.45rem 0.75rem; border-radius: 999px; display: inline-flex; align-items: center; gap: 0.4rem;
+    transition: background-color 180ms var(--ease-out), border-color 180ms var(--ease-out), color 180ms var(--ease-out), scale 120ms var(--ease-out);
+  }
+  .groups button span { font-family: var(--mono); font-size: 0.6875rem; font-weight: 500; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .groups button:hover { border-color: var(--rule-strong); color: var(--ink); }
+  .groups button[aria-pressed='true'] { background: var(--accent-wash); border-color: transparent; color: var(--accent-ink); }
+  .groups button[aria-pressed='true'] span { color: inherit; opacity: 0.75; }
+  .groups button:active, .arrow:active:not(:disabled) { scale: 0.96; }
+  .pager { display: flex; align-items: center; gap: 0.375rem; margin-left: auto; }
+  .count { font-family: var(--mono); font-size: 0.75rem; color: var(--ink-3); font-variant-numeric: tabular-nums; margin-right: 0.5rem; white-space: nowrap; }
+  .arrow {
+    appearance: none; width: 2.25rem; height: 2.25rem; border-radius: 50%; border: 1px solid var(--rule); background: transparent;
+    color: var(--ink); cursor: pointer; display: grid; place-items: center;
+    transition: background-color 180ms var(--ease-out), border-color 180ms var(--ease-out), opacity 180ms var(--ease-out), scale 120ms var(--ease-out);
+  }
+  .arrow:hover:not(:disabled) { border-color: var(--rule-strong); background: var(--paper-3); }
+  .arrow:disabled { opacity: 0.35; cursor: default; }
+  .groups button:focus-visible, .arrow:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  @media (max-width: 900px) { .demos { --per: 2; } }
+  /* a phone: one clip, the next peeking in */
+  @media (max-width: 600px) {
+    li { width: calc(var(--col) * 0.82); }
+    .pager .arrow { display: none; }
+    .groups { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); }
+    .groups button { flex: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .groups button, .arrow { transition: none; } }
+</style>

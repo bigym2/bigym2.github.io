@@ -1,0 +1,45 @@
+---
+import '../styles/global.css';
+import { site, asset } from '../lib/data';
+
+const pageTitle = `${site.title}: ${site.subtitle}`;
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined;
+// Social card (public/og.png, 1200×630). Needs SITE_URL at build time: crawlers want an absolute URL.
+const ogImage = Astro.site ? new URL(asset('/og.png'), Astro.site).href : undefined;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={site.description} />
+    {canonical && <link rel="canonical" href={canonical} />}
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={site.description} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    {ogImage && <meta property="og:image:width" content="1200" />}
+    {ogImage && <meta property="og:image:height" content="630" />}
+    {ogImage && <meta property="og:image:alt" content={`${site.title}: ${site.subtitle}`} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href={asset('/favicon.svg')} type="image/svg+xml" />
+    <link rel="icon" href={asset('/favicon.png')} type="image/png" sizes="64x64" />
+    <link rel="apple-touch-icon" href={asset('/apple-touch-icon.png')} />
+    <meta name="theme-color" content="#f9fafb" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e1013" media="(prefers-color-scheme: dark)" />
+    <script is:inline>
+      (() => {
+        let pref = null;
+        try { pref = localStorage.getItem('theme'); } catch {}
+        const dark = pref ? pref === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        // Sections wait for their scroll-in only when a script will bring them in.
+        document.documentElement.classList.add('js');
+      })();
+    </script>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

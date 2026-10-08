@@ -1,0 +1,262 @@
+{
+  "groups": [
+    {
+      "id": "reaching",
+      "label": "Reaching"
+    },
+    {
+      "id": "tabletop",
+      "label": "Table-top"
+    },
+    {
+      "id": "dishwasher",
+      "label": "Dishwasher"
+    },
+    {
+      "id": "counter",
+      "label": "Kitchen counter"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "reach_target_single",
+      "name": "reach target single",
+      "group": "reaching",
+      "instruction": "Reach the target with the left wrist.",
+      "image": "tasks/reach_target_single.jpg",
+      "demo": {
+        "video": "demos/reach_target_single.mp4",
+        "poster": "demos/reach_target_single.jpg",
+        "speed": 1
+      }
+    },
+    {
+      "id": "reach_target_multi_modal",
+      "name": "reach target multi modal",
+      "group": "reaching",
+      "instruction": "Reach the target with either wrist.",
+      "image": "tasks/reach_target_multi_modal.jpg",
+      "demo": {
+        "video": "demos/reach_target_multi_modal.mp4",
+        "poster": "demos/reach_target_multi_modal.jpg",
+        "speed": 1
+      }
+    },
+    {
+      "id": "reach_target_dual",
+      "name": "reach target dual",
+      "group": "reaching",
+      "instruction": "Reach the two targets, one with each wrist.",
+      "image": "tasks/reach_target_dual.jpg",
+      "demo": {
+        "video": "demos/reach_target_dual.mp4",
+        "poster": "demos/reach_target_dual.jpg",
+        "speed": 1
+      }
+    },
+    {
+      "id": "move_plate",
+      "name": "move plate",
+      "group": "tabletop",
+      "instruction": "Move the plate between two draining racks.",
+      "image": "tasks/move_plate.jpg",
+      "demo": {
+        "video": "demos/move_plate.mp4",
+        "poster": "demos/move_plate.jpg",
+        "speed": 1
+      }
+    },
+    {
+      "id": "move_two_plates",
+      "name": "move two plates",
+      "group": "tabletop",
+      "instruction": "Move two plates simultaneously from one draining rack to the other.",
+      "image": "tasks/move_two_plates.jpg",
+      "demo": {
+        "video": "demos/move_two_plates.mp4",
+        "poster": "demos/move_two_plates.jpg",
+        "speed": 1
+      }
+    },
+    {
+      "id": "flip_cup",
+      "name": "flip cup",
+      "group": "tabletop",
+      "instruction": "Flip the upside-down cup to an upright position.",
+      "image": "tasks/flip_cup.jpg",
+      "demo": {
+        "video": "demos/flip_cup.mp4",
+        "poster": "demos/flip_cup.jpg",
+        "speed": 1
+      }
+    },
+    {
+      "id": "flip_cutlery",
+      "name": "flip cutlery",
+      "group": "tabletop",
+      "instruction": "Take the cutlery from the holder, flip it, and place it back.",
+      "image": "tasks/flip_cutlery.jpg",
+      "demo": {
+        "video": "demos/flip_cutlery.mp4",
+        "poster": "demos/flip_cutlery.jpg",
+        "speed": 1
+      }
+    },
+    {
+      "id": "stack_blocks",
+      "name": "stack blocks",
+      "group": "tabletop",
+      "instruction": "Move blocks across the table and stack them in the target area.",
+      "image": "tasks/stack_blocks.jpg",
+      "demo": {
+        "video": "demos/stack_blocks.mp4",
+        "poster": "demos/stack_blocks.jpg",
+        "speed": 4
+      }
+    },
+    {
+      "id": "dishwasher_close",
+      "name": "dishwasher close",
+      "group": "dishwasher",
+      "instruction": "Push back all trays and close the door of the dishwasher.",
+      "image": "tasks/dishwasher_close.jpg",
+      "demo": {
+        "video": "demos/dishwasher_close.mp4",
+        "poster": "demos/dishwasher_close.jpg",
+        "speed": 2.5
+      }
+    },
+    {
+      "id": "dishwasher_load_cups",
+      "name": "dishwasher load cups",
+      "group": "dishwasher",
+      "instruction": "Move the cups from the table into the dishwasher's upper tray.",
+      "image": "tasks/dishwasher_load_cups.jpg",
+      "demo": {
+        "video": "demos/dishwasher_load_cups.mp4",
+        "poster": "demos/dishwasher_load_cups.jpg",
+        "speed": 1
+      }
+    },
+    {
+      "id": "dishwasher_load_cutlery",
+      "name": "dishwasher load cutlery",
+      "group": "dishwasher",
+      "instruction": "Move the cutlery from the holder on the table into the dishwasher's cutlery basket.",
+      "image": "tasks/dishwasher_load_cutlery.jpg",
+      "demo": {
+        "video": "demos/dishwasher_load_cutlery.mp4",
+        "poster": "demos/dishwasher_load_cutlery.jpg",
+        "speed": 1.5
+      }
+    },
+    {
+      "id": "dishwasher_load_plates",
+      "name": "dishwasher load plates",
+      "group": "dishwasher",
+      "instruction": "Move the plates from the rack into the dishwasher's lower tray.",
+      "image": "tasks/dishwasher_load_plates.jpg",
+      "demo": {
+        "video": "demos/dishwasher_load_plates.mp4",
+        "poster": "demos/dishwasher_load_plates.jpg",
+        "speed": 1.5
+      }
+    },
+    {
+      "id": "drawer_top_open",
+      "name": "drawer top open",
+      "group": "counter",
+      "instruction": "Open the top drawer of the kitchen cabinet.",
+      "image": "tasks/drawer_top_open.jpg",
+      "demo": {
+        "video": "demos/drawer_top_open.mp4",
+        "poster": "demos/drawer_top_open.jpg",
+        "speed": 1
+      }
+    },
+    {
+      "id": "drawer_top_close",
+      "name": "drawer top close",
+      "group": "counter",
+      "instruction": "Close the top drawer of the kitchen cabinet.",
+      "image": "tasks/drawer_top_close.jpg",
+      "demo": {
+        "video": "demos/drawer_top_close.mp4",
+        "poster": "demos/drawer_top_close.jpg",
+        "speed": 1
+      }
+    },
+    {
+      "id": "pick_box",
+      "name": "pick box",
+      "group": "counter",
+      "instruction": "Pick up the box from the side table and place it on the counter.",
+      "image": "tasks/pick_box.jpg",
+      "demo": {
+        "video": "demos/pick_box.mp4",
+        "poster": "demos/pick_box.jpg",
+        "speed": 2
+      }
+    },
+    {
+      "id": "put_cups",
+      "name": "put cups",
+      "group": "counter",
+      "instruction": "Pick up the cups from the table and put them into the closed wall cabinet.",
+      "image": "tasks/put_cups.jpg",
+      "demo": {
+        "video": "demos/put_cups.mp4",
+        "poster": "demos/put_cups.jpg",
+        "speed": 1.5
+      }
+    },
+    {
+      "id": "saucepan_to_hob",
+      "name": "saucepan to hob",
+      "group": "counter",
+      "instruction": "Take the saucepan from the closed cabinet and place it on the hob.",
+      "image": "tasks/saucepan_to_hob.jpg",
+      "demo": {
+        "video": "demos/saucepan_to_hob.mp4",
+        "poster": "demos/saucepan_to_hob.jpg",
+        "speed": 2
+      }
+    },
+    {
+      "id": "sandwich_remove",
+      "name": "sandwich remove",
+      "group": "counter",
+      "instruction": "Remove the sandwich from the frying pan.",
+      "image": "tasks/sandwich_remove.jpg",
+      "demo": {
+        "video": "demos/sandwich_remove.mp4",
+        "poster": "demos/sandwich_remove.jpg",
+        "speed": 1.5
+      }
+    },
+    {
+      "id": "wall_cupboard_open",
+      "name": "wall cupboard open",
+      "group": "counter",
+      "instruction": "Open the doors of the wall cabinet.",
+      "image": "tasks/wall_cupboard_open.jpg",
+      "demo": {
+        "video": "demos/wall_cupboard_open.mp4",
+        "poster": "demos/wall_cupboard_open.jpg",
+        "speed": 1
+      }
+    },
+    {
+      "id": "wall_cupboard_close",
+      "name": "wall cupboard close",
+      "group": "counter",
+      "instruction": "Close the doors of the wall cabinet.",
+      "image": "tasks/wall_cupboard_close.jpg",
+      "demo": {
+        "video": "demos/wall_cupboard_close.mp4",
+        "poster": "demos/wall_cupboard_close.jpg",
+        "speed": 1
+      }
+    }
+  ]
+}

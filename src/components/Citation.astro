@@ -1,0 +1,70 @@
+---
+// The BibTeX entry as a code card: a title bar with the file name and the
+// copy button, then the entry with its parts told apart (entry type and key,
+// field names, values). Highlighting is done here, at build time.
+import { site } from '../lib/data';
+import Icon from './Icon.astro';
+
+const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const html = site.bibtex.split('\n').map((line) => {
+  let m = line.match(/^@(\w+)\{([^,]*),\s*$/);
+  if (m) return `<span class="p">@</span><span class="ty">${esc(m[1])}</span><span class="p">{</span><span class="key">${esc(m[2])}</span><span class="p">,</span>`;
+  m = line.match(/^(\s*)(\w+)(\s*=\s*)\{(.*)\}(,?)\s*$/);
+  if (m) return `${m[1]}<span class="f">${esc(m[2])}</span><span class="p">${esc(m[3])}{</span><span class="v">${esc(m[4])}</span><span class="p">}${m[5]}</span>`;
+  return `<span class="p">${esc(line)}</span>`;
+}).join('\n');
+---
+<div class="page">
+  <figure class="bib">
+    <div class="bar">
+      <span class="name">citation.bib</span>
+      <button type="button" class="copy" data-copy-bib aria-label="Copy BibTeX">
+        <span class="ico"><span class="i-copy"><Icon name="copy" size={14} /></span><span class="i-check"><Icon name="check" size={14} /></span></span>
+        <span class="label">Copy</span>
+      </button>
+    </div>
+    <pre><code set:html={html} /></pre>
+  </figure>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy-bib]').forEach((b) => b.addEventListener('click', async () => {
+    const label = b.querySelector('.label')!;
+    try {
+      await navigator.clipboard.writeText(b.closest('.bib')!.querySelector('code')!.innerText);
+      label.textContent = 'Copied';
+      b.classList.add('done');
+    } catch { label.textContent = 'Press ⌘C'; }
+    setTimeout(() => { label.textContent = 'Copy'; b.classList.remove('done'); }, 1600);
+  }));
+</script>
+
+<style>
+  .bib { margin: 0; border-radius: var(--r-lg); background: var(--paper); box-shadow: inset 0 0 0 1px var(--rule), var(--shadow-lift); overflow: hidden; }
+  .bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: 0.45rem 0.5rem 0.45rem 1rem; border-bottom: 1px solid var(--rule); background: var(--paper-2);
+  }
+  .name { font-family: var(--mono); font-size: 0.75rem; color: var(--ink-3); }
+  .copy {
+    display: inline-flex; align-items: center; gap: 0.4rem; height: 1.9rem; padding-inline: 0.65rem;
+    border: 0; border-radius: var(--r-md); background: transparent;
+    color: var(--ink-2); font-family: var(--sans); font-size: 0.8125rem; font-weight: 600; cursor: pointer;
+    transition-property: background-color, color, scale; transition-duration: 140ms;
+  }
+  @media (hover: hover) { .copy:hover { color: var(--ink); background: var(--paper-3); } }
+  .copy:active { scale: 0.96; }
+  .copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .ico { position: relative; width: 14px; height: 14px; }
+  .ico > span { position: absolute; inset: 0; display: grid; place-items: center; transition: opacity 160ms, scale 160ms; }
+  .i-check { opacity: 0; scale: 0.5; color: var(--accent-ink); }
+  .copy.done .i-copy { opacity: 0; scale: 0.5; }
+  .copy.done .i-check { opacity: 1; scale: 1; }
+
+  pre { margin: 0; padding: 1.1rem 1.25rem 1.25rem; overflow-x: auto; font-family: var(--mono); font-size: 0.8125rem; line-height: 1.75; color: var(--ink); }
+  code :global(.p) { color: var(--ink-3); }
+  code :global(.ty) { color: var(--accent-ink); font-weight: 600; }
+  code :global(.key) { color: var(--ink); font-weight: 600; }
+  code :global(.f) { color: var(--ink-2); }
+  code :global(.v) { color: var(--ink); }
+</style>

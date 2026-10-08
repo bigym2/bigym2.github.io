@@ -1,0 +1,126 @@
+---
+// Title block set over the fly-through clip: a dark veil keeps white text
+// legible over any frame, the clip itself carries no text.
+import { site, asset } from '../lib/data';
+import AutoVideo from './AutoVideo.astro';
+import LinkButtons from './LinkButtons.astro';
+import Logo from './Logo.astro';
+
+const accent = site.titleAccent && site.title.endsWith(site.titleAccent) ? site.titleAccent : null;
+const head = accent ? site.title.slice(0, -accent.length) : site.title;
+const multiAffil = site.affiliations.length > 1;
+const anyEqual = site.authors.some((a) => a.equal);
+---
+<header class="hero" id="top">
+  <div class="bg" aria-hidden="true">
+    <AutoVideo src={site.hero.video} poster={site.hero.poster} width={1920} height={1080} label={site.hero.alt} eager />
+  </div>
+  <div class="veil" aria-hidden="true"></div>
+
+  <div class="content page">
+    <h1><Logo class="mark" /><span>{head}{accent && <span class="accent">{accent}</span>}</span></h1>
+    <p class="subtitle">{site.subtitle}</p>
+
+    <ul class="authors">
+      {site.authors.map((a) => (
+        <li>
+          {a.url ? <a href={a.url}>{a.name}</a> : a.name}
+          {(multiAffil || a.equal) && <sup>{multiAffil && a.affiliations.join('')}{a.equal && '*'}</sup>}
+        </li>
+      ))}
+    </ul>
+    <p class="affiliations">
+      {site.affiliations.map((f) => <span>{multiAffil && <sup>{f.id}</sup>}{f.name}</span>)}
+      {anyEqual && <span><sup>*</sup>Equal contribution</span>}
+    </p>
+
+    {site.logos.length > 0 && (
+      <p class="orgs">
+        {site.logos.map((l) => (
+          <a href={l.url} target="_blank" rel="noopener"><img src={asset(l.src)} alt={l.name} style={`height:${l.height}px`} /></a>
+        ))}
+      </p>
+    )}
+
+    <LinkButtons />
+
+    {site.venue && <p class="venue">{site.venue}</p>}
+  </div>
+</header>
+
+<style>
+  .hero {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    align-items: center;
+    /* Exactly the first screen under the nav; the clip covers it (a 16:10
+       screen trims a sliver of the 16:9 clip's sides). Never shorter than
+       the content needs. */
+    min-height: max(100svh - 3.5rem, 34rem);
+    padding-block: 3.5rem 4rem;
+    color: #fff;
+    background: #0b0c0e;
+    overflow: hidden;
+  }
+  .bg, .veil { position: absolute; inset: 0; z-index: -1; }
+  .bg :global(video) { width: 100%; height: 100%; object-fit: cover; }
+  .veil { background: rgb(18 20 24 / 0.62); }
+
+  .content { text-align: center; }
+  /* Institution marks under the authors and affiliations, in white like the rest of the block. */
+  .orgs { display: flex; justify-content: center; gap: 2rem; margin: 1.25rem 0 0; }
+  .orgs a { display: block; opacity: 0.88; transition: opacity 140ms; }
+  @media (hover: hover) { .orgs a:hover { opacity: 1; } }
+  .orgs img { display: block; width: auto; filter: brightness(0) invert(1); }
+  /* The mark and the name set as in the lockup: the mark's ink spans the cap
+     height plus a third above and below, ~0.4em from the B. */
+  h1 {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.22em;
+    font-family: var(--sans);
+    font-size: clamp(3.5rem, 11vw, 8rem);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    text-shadow: 0 2px 24px rgb(0 0 0 / 0.35);
+  }
+  /* The name stays on one line; under 360px the whole lockup steps down a size to fit. */
+  h1 > span { white-space: nowrap; }
+  @media (max-width: 359px) { h1 { font-size: 3rem; } }
+  .accent { color: oklch(0.74 0.11 240); }
+  h1 :global(.mark) { --accent: oklch(0.74 0.11 240); flex: none; width: 1.3em; height: 1.3em; filter: drop-shadow(0 2px 24px rgb(0 0 0 / 0.35)); }
+  .subtitle {
+    margin: 1.1rem auto 0;
+    max-width: 42ch;
+    font-family: var(--sans);
+    font-size: clamp(1.25rem, 2.6vw, 2rem);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    text-shadow: 0 1px 16px rgb(0 0 0 / 0.4);
+  }
+
+  .authors {
+    list-style: none; margin: 2rem auto 0; padding: 0;
+    display: flex; flex-wrap: wrap; justify-content: center; column-gap: 1.1rem; row-gap: 0.25rem;
+    font-family: var(--sans); font-size: 1.1875rem; font-weight: 500;
+  }
+  .authors a { color: inherit; text-decoration-color: rgb(255 255 255 / 0.4); }
+  sup { font-size: 0.68em; margin-left: 0.08em; }
+  .affiliations {
+    margin-top: 0.55rem;
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 0.2rem 1.1rem;
+    font-family: var(--sans); font-size: 0.9375rem; color: rgb(255 255 255 / 0.82);
+  }
+  .content :global(.links) { margin-top: 2rem; }
+  .venue { margin-top: 1.75rem; font-family: var(--sans); font-size: 1.125rem; font-weight: 700; }
+
+  @media (max-width: 600px) {
+    .hero { padding-block: 3rem; }
+    .authors { font-size: 1.0625rem; column-gap: 0.8rem; }
+  }
+</style>

@@ -1,0 +1,236 @@
+---
+// The paper's Fig. 2 (From BiGym to BiGym 2.0), drawn as SVG and animated
+// (src/lib/fig2.js): (a) BiGym's animated legs follow a pelvis command, then
+// (b) a GR00T-WBC rollout squats and walks under height and velocity commands.
+// It plays once as it scrolls into view and ends on the paper's figure; the
+// poster is that same figure, shown until the SVG has loaded and without a
+// script. On a narrow screen one panel shows at a time: the view follows the
+// panel that is moving, and a switch (or a swipe) picks one.
+import Icon from './Icon.astro';
+import { media } from '../lib/data';
+---
+<figure class="fig2 wrap" data-fig2 data-base={media('fig2/')}
+  aria-label="Animated Fig. 2: From BiGym to BiGym 2.0">
+  <div class="card">
+    <div class="seg" role="group" aria-label="Panel">
+      <button type="button" data-panel="a" aria-pressed="false">BiGym <span>(H1)</span></button>
+      <button type="button" data-panel="b" aria-pressed="true">BiGym 2.0 <span>(G1)</span></button>
+    </div>
+    <div class="stage" data-stage>
+      <img class="poster" src={media('fig2/fig2-poster.jpg')} width="1800" height="541" alt="" decoding="async" loading="lazy" />
+      <svg data-svg viewBox="0 0 1798.2 540" role="img"
+        aria-label="(a) BiGym: four increments set the H1 pelvis pose; the legs follow height-conditioned kinematic trajectories. (b) BiGym 2.0: velocity and height commands go to frozen GR00T-WBC policies, which drive the G1's legs."></svg>
+    </div>
+    <button type="button" class="replay" data-replay hidden aria-label="Replay the animation" title="Replay"><Icon name="replay" size={16} /></button>
+    <div class="track" aria-hidden="true"><i data-progress></i></div>
+  </div>
+  <figcaption>
+    <b>BiGym → BiGym&nbsp;2.0.</b> The H1's legs were replayed under a commanded pelvis; the G1's are driven by a frozen GR00T-WBC controller, the same one every demonstration below was recorded through.
+  </figcaption>
+</figure>
+
+<script>
+  import { mountFig2 } from '../lib/fig2.js';
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const narrowQ = window.matchMedia('(max-width: 720px)');
+
+  for (const fig of document.querySelectorAll<HTMLElement>('[data-fig2]')) {
+    const base = fig.dataset.base!;
+    const svg = fig.querySelector<SVGSVGElement>('[data-svg]')!;
+    const stage = fig.querySelector<HTMLElement>('[data-stage]')!;
+    const bar = fig.querySelector<HTMLElement>('[data-progress]')!;
+    const replay = fig.querySelector<HTMLButtonElement>('[data-replay]')!;
+    const segs = [...fig.querySelectorAll<HTMLButtonElement>('[data-panel]')];
+
+    let F: ReturnType<typeof mountFig2> | null = null;
+    let loading: Promise<void> | null = null;
+    const full = { x: 0, w: 1798.2 };
+    const rects: Record<'a' | 'b', { x: number; w: number }> = { a: full, b: full };
+
+    // ---- loading: data and font only once the figure is near
+    function load() {
+      loading ??= (async () => {
+        const font = new FontFace('LM Math fig2', `url(${base}lm-math-fig2.woff2)`);
+        const [data] = await Promise.all([
+          fetch(`${base}fig2.json`).then((r) => r.json()),
+          font.load().then((f) => document.fonts.add(f)).catch(() => {}),
+        ]);
+        F = mountFig2(svg, data, base);
+        F.seek(1e9);
+        rects.a = F.views.a; rects.b = F.views.b;
+        fig.classList.add('live');
+        setView(mode, false);
+      })();
+      return loading;
+    }
+
+    // ---- one panel at a time on narrow screens
+    let mode: 'a' | 'b' = 'b', chosen = false;
+    let vb = { ...full }, vbAnim = 0;
+    function applyVB(r: { x: number; w: number }) { svg.setAttribute('viewBox', `${r.x} 0 ${r.w} 540`); }
+    function setView(m: 'a' | 'b', animate = true) {
+      mode = m;
+      segs.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.panel === m)));
+      const to = narrowQ.matches ? rects[m] : full;
+      cancelAnimationFrame(vbAnim);
+      if (!animate || reduce.matches) { vb = { ...to }; applyVB(vb); return; }
+      const from = { ...vb }, t0 = performance.now(), D = 520;
+      const ease = (p: number) => 1 - Math.pow(1 - p, 3);
+      const step = () => {
+        const p = Math.min(1, (performance.now() - t0) / D), e = ease(p);
+        vb = { x: from.x + (to.x - from.x) * e, w: from.w + (to.w - from.w) * e };
+        applyVB(vb);
+        if (p < 1) vbAnim = requestAnimationFrame(step);
+      };
+      vbAnim = requestAnimationFrame(step);
+    }
+    segs.forEach((b) => b.addEventListener('click', () => { chosen = true; setView(b.dataset.panel as 'a' | 'b'); lightShown(); }));
+    narrowQ.addEventListener('change', () => setView(mode, false));
+    // a horizontal drag slides between the panels under the finger; vertical drags
+    // still scroll the page
+    let sx = 0, sy = 0, x0 = 0, tracking = false, dragging = false;
+    stage.addEventListener('pointerdown', (e) => {
+      if (!narrowQ.matches || !F) return;
+      tracking = true; dragging = false; sx = e.clientX; sy = e.clientY;
+      cancelAnimationFrame(vbAnim); x0 = vb.x;
+    });
+    stage.addEventListener('pointermove', (e) => {
+      if (!tracking) return;
+      const dx = e.clientX - sx, dy = e.clientY - sy;
+      if (!dragging && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) { dragging = true; stage.setPointerCapture(e.pointerId); }
+      if (!dragging) return;
+      const k = vb.w / stage.clientWidth, lo = rects.a.x, hi = rects.b.x;
+      let x = x0 - dx * k;
+      if (x < lo) x = lo - Math.sqrt(lo - x) * 4; else if (x > hi) x = hi + Math.sqrt(x - hi) * 4;   // a little give at the ends
+      vb = { x, w: vb.w }; applyVB(vb);
+    });
+    const release = (e: PointerEvent) => {
+      if (!tracking) return; tracking = false;
+      if (!dragging) return;
+      const dx = e.clientX - sx;
+      const next = Math.abs(dx) > 36 ? (dx < 0 ? 'b' : 'a') : mode;
+      if (next !== mode) chosen = true;
+      setView(next); lightShown();
+    };
+    stage.addEventListener('pointerup', release);
+    stage.addEventListener('pointercancel', release);
+
+    // when only one panel shows, it is never the dimmed one
+    function lightShown() {
+      if (!F || !narrowQ.matches) return;
+      (F.panels[mode] as SVGElement).style.opacity = '1';
+    }
+
+    // ---- playback: once, as it scrolls into view; paused while off screen
+    const START = 0.7;                  // skip most of the opening hold
+    let t = 0, playing = false, last = 0, raf = 0, visible = false, done = false;
+    function frame(now: number) {
+      if (!F) return;
+      t += Math.min(0.1, (now - last) / 1000); last = now;
+      const end = F.FINISHED + 0.2;
+      if (t >= end) { t = end; playing = false; done = true; }
+      F.seek(t);
+      // the narrow view follows whichever panel is moving, until a panel is chosen
+      if (narrowQ.matches && !chosen) {
+        let lit: 0 | 1 | 2 = 0;
+        for (const [t0, , , to] of F.FOCUS as number[][]) if (t >= t0) lit = to as 0 | 1 | 2;
+        const want = lit === 1 ? 'a' : 'b';
+        if (want !== mode) setView(want);
+      }
+      lightShown();
+      bar.style.transform = `scaleX(${Math.min(1, Math.max(0, (t - START) / (end - START)))})`;
+      fig.classList.toggle('playing', playing);
+      if (playing && visible) raf = requestAnimationFrame(frame);
+    }
+    function play(from = START) {
+      if (!F) return;
+      cancelAnimationFrame(raf);
+      t = from; playing = true; done = false; chosen = false; last = performance.now();
+      raf = requestAnimationFrame(frame);
+    }
+    const near = new IntersectionObserver(([e]) => { if (e.isIntersecting) { near.disconnect(); load(); } }, { rootMargin: '600px 0px' });
+    near.observe(fig);
+    // starts once the figure is well into view, so nobody arrives at a finished one
+    const io = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting;
+      if (!visible || reduce.matches) return;
+      load().then(() => {
+        if (!t && !done) play();
+        else if (playing) { cancelAnimationFrame(raf); last = performance.now(); raf = requestAnimationFrame(frame); }
+      });
+    }, { threshold: 0.6 });
+    io.observe(stage);
+    if (!reduce.matches) replay.hidden = false;
+    replay.addEventListener('click', () => load().then(() => play(START)));
+    reduce.addEventListener('change', () => {
+      replay.hidden = reduce.matches;
+      if (reduce.matches && F) { cancelAnimationFrame(raf); playing = false; t = F.FINISHED + 1; F.seek(t); }
+    });
+  }
+</script>
+
+<style>
+  .fig2 { margin: 0 auto clamp(2rem, 4.5vw, 3rem); }
+  /* A paper figure: on white in either theme. */
+  .card { position: relative; padding: clamp(0.75rem, 2.4vw, 1.6rem) clamp(0.75rem, 2.4vw, 1.6rem) 0; border-radius: var(--r-lg); background: #fff; box-shadow: var(--shadow-lift); overflow: hidden; }
+  .stage { position: relative; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+  .stage svg { display: block; width: 100%; height: auto; overflow: hidden; }
+  .poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; transition: opacity 300ms var(--ease-out); }
+  .live .poster { opacity: 0; }
+  :global(html:not(.js)) .stage svg { visibility: hidden; }
+
+  /* The figure's own type, as in the paper (the SVG is built by script, so these are global). */
+  .stage :global(text) { font-family: Helvetica, Arial, sans-serif; fill: #3c3c3c; }
+  .stage :global(.math) { font-family: 'LM Math fig2', 'Latin Modern Math', 'STIX Two Math', serif; fill: #000; }
+  .stage :global(.sub) { font-family: 'Times', 'Times New Roman', serif; fill: #000; }
+  .stage :global(svg) { --okGray: #5A5A5A; --inkGray: #3C3C3C; --ruleGray: #B8B8B8; --nv: #649D00; --data: #4999C6; }
+
+  /* Playback progress: a hairline along the card's foot, in the page's accent
+     (the card is white in either theme, so the light theme's accent). */
+  .track { height: 2px; margin-top: clamp(0.6rem, 1.6vw, 1rem); margin-inline: calc(-1 * clamp(0.75rem, 2.4vw, 1.6rem)); }
+  .track i { display: block; height: 100%; background: oklch(0.52 0.13 245); transform-origin: left; transform: scaleX(0); opacity: 0; transition: opacity 400ms var(--ease-out); }
+  .fig2.playing .track i { opacity: 1; }
+
+  /* Replay: a quiet round button in the card's empty bottom-right corner. */
+  .replay {
+    position: absolute; right: clamp(0.6rem, 1.6vw, 1rem); bottom: clamp(0.75rem, 1.8vw, 1.15rem); z-index: 2;
+    display: grid; place-items: center; width: 2rem; height: 2rem; padding: 0;
+    border: 1px solid oklch(0.885 0.006 245); border-radius: 999px; background: #fff; color: oklch(0.43 0.012 245);
+    cursor: pointer; transition-property: color, border-color, scale, opacity; transition-duration: 140ms;
+  }
+  .replay[hidden] { display: none; }
+  .fig2.playing .replay { opacity: 0.45; }
+  @media (hover: hover) { .replay:hover { opacity: 1; color: oklch(0.21 0.012 245); border-color: oklch(0.8 0.008 245); } }
+  .replay:active { scale: 0.94; }
+  .replay:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* One line that hands over to the demonstrations below. */
+  figcaption {
+    max-width: 64ch; margin: 1rem auto 0; text-align: center; text-wrap: balance;
+    font-family: var(--sans); font-size: 0.9375rem; line-height: 1.55; color: var(--ink-2);
+  }
+  figcaption b { color: var(--ink); font-weight: 650; }
+
+  /* The panel switch: only when one panel shows at a time. */
+  .seg { display: none; }
+  @media (max-width: 720px) {
+    .seg {
+      display: flex; width: fit-content; margin: 0 auto 0.75rem; padding: 3px; border-radius: 999px;
+      background: oklch(0.95 0.004 245); font-family: var(--sans); font-size: 0.8125rem;
+    }
+    .seg button {
+      appearance: none; border: 0; background: transparent; color: oklch(0.43 0.012 245); cursor: pointer;
+      font: inherit; font-weight: 600; padding: 0.3rem 0.85rem; border-radius: 999px;
+      transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out), scale 120ms var(--ease-out);
+    }
+    .seg button span { font-weight: 500; opacity: 0.7; }
+    .seg button[aria-pressed='true'] { background: #fff; color: oklch(0.21 0.012 245); box-shadow: 0 1px 2px oklch(0 0 0 / 0.08), 0 4px 12px -6px oklch(0 0 0 / 0.25); }
+    .seg button:active { scale: 0.96; }
+    /* the poster is the whole figure; in the one-panel view it waits for the SVG */
+    .poster { display: none; }
+    .fig2:not(.live) .stage { min-height: 52vw; }
+    .stage { cursor: grab; }
+  }
+  @media (prefers-reduced-motion: reduce) { .poster { transition: none; } }
+</style>

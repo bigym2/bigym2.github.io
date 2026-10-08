@@ -1,0 +1,71 @@
+{
+  "budget_steps": 101000,
+  "sessions_per_task": 3,
+  "quote": {
+    "text": "As LLMs become more capable, benchmark performance is increasingly a function of test-time compute.",
+    "author": "Noam Brown",
+    "title": "Implications of Large-Scale Test-Time Compute",
+    "url": "https://x.com/polynoamial/status/2064210146558136827",
+    "date": "June 2026"
+  },
+  "footnote": "Harnesses: Claude Code 2.1.280; Codex CLI 0.153.4 for GPT-6 Astra, 0.157.1 for GPT-6 Sol and 0.160.0 for GPT-6.1 Sol; each newer model is served only to a newer client. Input tokens include cache reads (98.5% for Claude Opus 5.5, 97.8% for GPT-6 Astra, 98.4% for GPT-6 Sol, 97.6% for GPT-6.1 Sol); Claude Code also counts cache writes.",
+  "agents": [
+    { "id": "opus", "model": "Claude Opus 5.5", "short": "Claude Opus 5.5", "harness": "Claude Code", "effort": "high" },
+    { "id": "astra", "model": "GPT-6 Astra", "short": "GPT-6 Astra", "harness": "Codex", "effort": "high" },
+    { "id": "sol", "model": "GPT-6 Sol", "short": "GPT-6 Sol", "harness": "Codex", "effort": "high" },
+    { "id": "sol61", "model": "GPT-6.1 Sol", "short": "GPT-6.1 Sol", "harness": "Codex", "effort": "high" }
+  ],
+  "rows": [
+    { "task": "dishwasher_close", "label": "Dishwasher close", "values": {
+      "opus":  { "sessions": [0, 0, 100], "usd": 20.3, "tokens_m": 37 },
+      "astra": { "sessions": [100, 100, 100], "usd": 11.7, "tokens_m": 9 },
+      "sol":   { "sessions": [0, 0, 0], "usd": 6.9, "tokens_m": 25 },
+      "sol61": { "sessions": [0, 0, 0], "usd": 2.5, "tokens_m": 11 } } },
+    { "task": "dishwasher_load_cups", "label": "Dishwasher load cups", "values": {
+      "opus":  { "sessions": [83, 1, 1], "usd": 27.9, "tokens_m": 72 },
+      "astra": { "sessions": [18, 16, 30], "usd": 24.4, "tokens_m": 18 },
+      "sol":   { "sessions": [2, 0, 3], "usd": 10.1, "tokens_m": 42 },
+      "sol61": { "sessions": [36, 2, 15], "usd": 2.1, "tokens_m": 11 } } },
+    { "task": "drawer_top_close", "label": "Drawer close", "values": {
+      "opus":  { "sessions": [100, 100, 100], "usd": 1.7, "tokens_m": 3 },
+      "astra": { "sessions": [96, 100, 100], "usd": 1.6, "tokens_m": 1 },
+      "sol":   { "sessions": [98, 100, 100], "usd": 1.2, "tokens_m": 4 },
+      "sol61": { "sessions": [100, 100, 100], "usd": 0.3, "tokens_m": 1 } } },
+    { "task": "drawer_top_open", "label": "Drawer open", "values": {
+      "opus":  { "sessions": [99, 98, 100], "usd": 11.0, "tokens_m": 26 },
+      "astra": { "sessions": [100, 97, 100], "usd": 6.6, "tokens_m": 5 },
+      "sol":   { "sessions": [55, 66, 36], "usd": 4.7, "tokens_m": 18 },
+      "sol61": { "sessions": [40, 100, 34], "usd": 0.9, "tokens_m": 4 } } },
+    { "task": "move_plate", "label": "Move plate", "values": {
+      "opus":  { "sessions": [21, 15, 23], "usd": 27.8, "tokens_m": 51 },
+      "astra": { "sessions": [36, 2, 4], "usd": 18.8, "tokens_m": 13 },
+      "sol":   { "sessions": [1, 7, 5], "usd": 4.2, "tokens_m": 16 },
+      "sol61": { "sessions": [7, 0, 17], "usd": 0.9, "tokens_m": 4 } } },
+    { "task": "move_two_plates", "label": "Move two plates", "values": {
+      "opus":  { "sessions": [8, 15, 22], "usd": 23.0, "tokens_m": 58 },
+      "astra": { "sessions": [0, 38, 9], "usd": 12.3, "tokens_m": 8 },
+      "sol":   { "sessions": [0, 0, 0], "usd": 6.2, "tokens_m": 25 },
+      "sol61": { "sessions": [0, 8, 0], "usd": 2.0, "tokens_m": 10 } } },
+    { "task": "pick_box", "label": "Pick box", "values": {
+      "opus":  { "sessions": [44, 99, 71], "usd": 10.6, "tokens_m": 26 },
+      "astra": { "sessions": [64, 85, 12], "usd": 12.5, "tokens_m": 9 },
+      "sol":   { "sessions": [0, 0, 0], "usd": 5.9, "tokens_m": 21 },
+      "sol61": { "sessions": [0, 52, 0], "usd": 1.5, "tokens_m": 8 } } },
+    { "task": "reach_target_dual", "label": "Reach dual", "values": {
+      "opus":  { "sessions": [71, 99, 65], "usd": 10.2, "tokens_m": 24 },
+      "astra": { "sessions": [100, 93, 75], "usd": 6.0, "tokens_m": 4 },
+      "sol":   { "sessions": [33, 58, 20], "usd": 3.8, "tokens_m": 14 },
+      "sol61": { "sessions": [82, 61, 66], "usd": 0.8, "tokens_m": 3 } } },
+    { "task": "reach_target_multi_modal", "label": "Reach multi-modal", "values": {
+      "opus":  { "sessions": [100, 100, 100], "usd": 7.7, "tokens_m": 12 },
+      "astra": { "sessions": [75, 97, 95], "usd": 4.6, "tokens_m": 3 },
+      "sol":   { "sessions": [73, 86, 99], "usd": 1.2, "tokens_m": 4 },
+      "sol61": { "sessions": [81, 97, 100], "usd": 0.9, "tokens_m": 3 } } }
+  ],
+  "totals": {
+    "opus":  { "mean": 60.6, "usd": 420, "tokens_m": 921.4 },
+    "astra": { "mean": 64.5, "usd": 296, "tokens_m": 208.4 },
+    "sol":   { "mean": 31.2, "usd": 133, "tokens_m": 508.1 },
+    "sol61": { "mean": 40.7, "usd": 36, "tokens_m": 168.8 }
+  }
+}

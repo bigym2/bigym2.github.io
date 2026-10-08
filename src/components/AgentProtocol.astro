@@ -1,0 +1,598 @@
+---
+// The coding-agent protocol (the paper's Figure 4) drawn for the page: the
+// prompt and demonstration the agent is handed, its development loop inside
+// the container, and the frozen evaluation. The prompt and the evaluation are
+// HTML so their text stays sharp and selectable; the loop is an inline SVG
+// sized so its labels stay at 11px or more on a phone.
+//
+// The markup is the finished diagram. The first time the figure comes on
+// screen a script plays how it builds up (the order of the old protocol
+// clip), ending with the evaluation filling seed by seed; then it stays
+// finished until the reader presses Replay. With reduced motion, or without
+// JavaScript, the finished diagram is all there is.
+import { agent, agentById, media } from '../lib/data';
+import { codex, openai } from '../lib/protocolMarks';
+import Icon from './Icon.astro';
+
+const shown = agentById.get(agent.protocol_agent)!;
+const harness = shown.harness.split(' ')[0];
+const prompt = `You are writing the control policy
+for a simulated Unitree G1
+humanoid robot. Your submission is
+policy.py in this directory.
+docs/api.md describes the
+observation, action and tool
+interface and how to run episodes.
+
+What you have
+- demo_*.mp4 ...
+- ...
+How you are scored ...
+Rules ...
+Task: ...`;
+const task = 'Pick the cardboard box up from the side table and gently set it down on the kitchen counter.';
+const views = ['head', 'left_wrist', 'right_wrist'];
+// A real evaluation: GPT-6 Astra's frozen pick_box program, session 1 of the
+// strict run (eval/episodes.csv in strict_opus55_astra_gpt6sol_2026-09-29),
+// one digit per hidden seed 620000-620099, 1 = success. Filled cells are
+// successes; nothing else is drawn, so the grid reads without a key.
+const outcomes = '1101011110000100111011111110111001011100110101011101001010101010101011001110101111101110111001111111';
+const successes = [...outcomes].filter((c) => c === '1').length;
+
+// A six-armed snowflake, the paper's mark for "frozen", as one path of radius r.
+const snow = (r: number) => [0, 60, 120, 180, 240, 300].map((a) => {
+  const p = (d: number, ang: number) => `${(d * Math.cos((ang * Math.PI) / 180)).toFixed(2)} ${(d * Math.sin((ang * Math.PI) / 180)).toFixed(2)}`;
+  const m = 0.56 * r, b = 0.43 * r;
+  const [mx, my] = p(m, a).split(' ').map(Number);
+  const q = (ang: number) => `M ${mx} ${my} l ${p(b, ang)}`;
+  return `M 0 0 L ${p(r, a)} ${q(a + 48)} ${q(a - 48)}`;
+}).join(' ');
+
+// Loop geometry (SVG user units): four steps around the agent.
+const steps = [
+  { id: 'write', x: 140, y: 34, w: 152 },
+  { id: 'run', x: 246, y: 108, w: 62 },
+  { id: 'read', x: 140, y: 182, w: 112 },
+  { id: 'edit', x: 34, y: 108, w: 62 },
+];
+const H = 28;
+const py = media('agent/python.svg');
+---
+<figure class="proto" data-proto aria-labelledby="proto-cap">
+  <div class="panels">
+    <section class="panel prompt" data-prompt aria-label="What the agent is given">
+      <h4>Task prompt</h4>
+      <pre class="card" id="proto-prompt">{prompt.split('\n').map((l, i) => <span class="ln" style={`--i:${i}`}>{`${l}\n`}</span>)}</pre>
+      <button type="button" class="more" data-more aria-controls="proto-prompt" aria-expanded="false">Full prompt</button>
+      <div class="views" data-demo>
+        {views.map((v, i) => (
+          <figure style={`--i:${i}`}>
+            <img src={media(`agent/${v}.jpg`)} width="480" height="360" alt="" loading="lazy" decoding="async" />
+            <figcaption>{v}</figcaption>
+          </figure>
+        ))}
+      </div>
+      <p class="task"><span>Task:</span> {task}</p>
+    </section>
+
+    <div class="link" data-at="2" aria-hidden="true"><svg viewBox="0 0 40 12"><path d="M 2 6 H 36" /><path class="head" d="M 30 1.5 L 38 6 L 30 10.5 Z" /></svg></div>
+
+    <section class="panel box" aria-label="Development inside the container">
+      <h4 data-at="1"><img src={media('agent/docker.svg')} alt="" width="24" height="18" /> BiGym agent container</h4>
+      <div class="dashed" data-dashed>
+        <div class="frame" data-at="1" data-frame></div>
+        <svg class="loop" viewBox="0 0 400 378" role="img" aria-label={`${harness} with ${shown.model} writes policy.py, runs it, reads the result and edits it; every run goes through client.py to the simulator, which sends back 84×84 onboard views and proprioception and takes joint targets, and every simulated step is charged to a ${agent.budget_steps.toLocaleString('en')}-step budget.`}>
+          <defs>
+            <marker id="proto-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 Z" /></marker>
+          </defs>
+
+          <g data-at="3">
+            <path class="cyc" d="M 217 40 Q 246 42 246 92" marker-end="url(#proto-tip)" />
+            <path class="cyc" d="M 246 124 Q 246 176 196 180" marker-end="url(#proto-tip)" />
+            <path class="cyc" d="M 84 180 Q 34 176 34 124" marker-end="url(#proto-tip)" />
+            <path class="cyc" d="M 34 92 Q 34 42 61 40" marker-end="url(#proto-tip)" />
+            {steps.map((s) => (
+              <g class="step" data-step={s.id}>
+                <rect x={s.x - s.w / 2} y={s.y - H / 2} width={s.w} height={H} rx="5" />
+                {s.id === 'write' ? (
+                  <text class="t" x={s.x - 67} y={s.y + 5}>write</text>
+                ) : (
+                  <text class="t" x={s.x} y={s.y + 5} text-anchor="middle">{s.id === 'read' ? 'read result' : s.id}</text>
+                )}
+              </g>
+            ))}
+            <image href={py} x="113" y="26.5" width="15" height="15" />
+            <text class="m" x="131" y="39">policy.py</text>
+          </g>
+
+          <g class="agent" data-at="1" data-agent>
+            <svg x="119" y="76" width="19" height="19" viewBox="0 0 90 90"><path fill-rule="evenodd" d={openai} /></svg>
+            <svg x="142" y="76" width="19" height="19" viewBox="0 0 90 90"><path fill-rule="evenodd" d={codex} /></svg>
+            <text class="t b" x="140" y="113" text-anchor="middle">{shown.model}</text>
+            <text class="t b" x="140" y="130" text-anchor="middle">{harness}</text>
+          </g>
+
+          <g data-at="3">
+            <path class="pipe" data-live d="M 140 199 V 237" marker-start="url(#proto-tip)" marker-end="url(#proto-tip)" />
+            <text class="lbl" x="148" y="222">socket</text>
+            <text class="lbl" x="132" y="214" text-anchor="end">84×84 views ↑</text>
+            <text class="lbl" x="132" y="231" text-anchor="end">joint targets ↓</text>
+            <rect class="srv" x="80" y="240" width="120" height={H} rx="6" />
+            <image href={py} x="90" y="246.5" width="15" height="15" />
+            <text class="m" x="109" y="259">client.py</text>
+            <path class="pipe" data-live d="M 202 254 H 228" marker-end="url(#proto-tip)" />
+
+            <text class="lbl" x="312" y="188" text-anchor="middle">simulator</text>
+            <rect class="sim" data-live x="232" y="196" width="160" height="120" rx="6" />
+            <rect class="srv" x="242" y="241" width="62" height={H} rx="6" />
+            <path class="snow" transform="translate(256 255)" d={snow(6)} />
+            <text class="t dim" x="267" y="260">WBC</text>
+            <path class="pipe" data-live d="M 306 255 H 326" marker-end="url(#proto-tip)" />
+            <image href={media('agent/g1.png')} x="331" y="204" width="47" height="103" />
+
+            <text class="lbl" x="4" y="348">budget: {agent.budget_steps.toLocaleString('en')} steps</text>
+            <rect class="bar" x="4" y="356" width="388" height="14" />
+            <rect class="fill" data-fill x="4" y="356" width="308" height="14" />
+            <path class="frontier" data-frontier d="M 312 355.5 V 370.5" />
+            <path class="cost" data-live d="M 312 319 V 353" marker-start="url(#proto-tip)" marker-end="url(#proto-tip)" />
+            <text class="lbl" x="304" y="340" text-anchor="end">200+ episode steps</text>
+          </g>
+        </svg>
+        <!-- The replay's opening, as a sum: Model + Harness = Agent. The two
+             terms then join and settle into the agent's place before the
+             container closes round them. -->
+        <div class="duo" data-duo aria-hidden="true">
+          <div class="pair" data-pair>
+            <div class="who"><svg viewBox="0 0 90 90"><path fill-rule="evenodd" d={openai} /></svg><b>{shown.model}</b><span>Model</span></div>
+            <span class="op">+</span>
+            <div class="who"><svg viewBox="0 0 90 90"><path fill-rule="evenodd" d={codex} /></svg><b>{harness}</b><span>Harness</span></div>
+            <span class="op">=</span>
+            <b class="sum">Agent</b>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="link frozen" data-at="4" aria-hidden="true"><svg viewBox="0 0 40 12"><path d="M 2 6 H 36" /><path class="head" d="M 30 1.5 L 38 6 L 30 10.5 Z" /></svg><svg class="flake" viewBox="-8 -8 16 16"><path class="snow" d={snow(6.5)} /></svg></div>
+
+    <section class="panel evaluation" data-at="4" aria-label="Held-out evaluation">
+      <h4>Held-out evaluation</h4>
+      <div class="card eval">
+        <p class="file"><img src={py} alt="" width="14" height="14" /><code>policy.py</code></p>
+        <div class="seeds" data-seeds role="img" aria-label={`100 hidden seeds, one episode each: ${successes} succeed (GPT-6 Astra, pick box, session 1)`}>
+          {[...outcomes].map((c, i) => <span class:list={{ ok: c === '1' }} style={`--i:${i}`}></span>)}
+        </div>
+        <p class="lbl">100 hidden seeds, one episode each</p>
+        <svg class="down" viewBox="0 0 12 28" aria-hidden="true"><path d="M 6 1 V 24" /><path class="head" d="M 1.5 18 L 6 26 L 10.5 18 Z" /></svg>
+        <p class="score"><b data-sr>{successes}%</b> success rate</p>
+      </div>
+    </section>
+  </div>
+  <div class="foot">
+    <figcaption id="proto-cap">The agent writes, runs and revises <code>policy.py</code> inside a sandbox; every environment step counts against the budget. The frozen program is then scored on the hidden seeds.</figcaption>
+    <button type="button" class="replay" data-replay hidden><Icon name="replay" size={15} /><span>Replay</span></button>
+  </div>
+</figure>
+
+<script>
+  // Plays the build-up once, the first time the figure is on screen: prompt,
+  // container, hand-off, the demonstration, the loop charging the budget,
+  // then the evaluation filling seed by seed and the score.
+  // Afterwards the diagram stays finished; Replay plays it again.
+  const FILL = 308 / 388; // the finished diagram's budget frontier
+  for (const fig of document.querySelectorAll<HTMLElement>('[data-proto]')) {
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+    const parts = [...fig.querySelectorAll<Element>('[data-at]')];
+    const steps = [...fig.querySelectorAll<SVGGElement>('[data-step]')];
+    const demo = fig.querySelector<HTMLElement>('[data-demo]')!;
+    const fill = fig.querySelector<SVGRectElement>('[data-fill]')!;
+    const frontier = fig.querySelector<SVGPathElement>('[data-frontier]')!;
+    const seeds = fig.querySelector<HTMLElement>('[data-seeds]')!;
+    const sr = fig.querySelector<HTMLElement>('[data-sr]')!;
+    const final = parseInt(sr.textContent!, 10);
+    const cells = [...seeds.children] as HTMLElement[];
+    const show = (n: number) => (sr.textContent = `${n}%`);
+    const replay = fig.querySelector<HTMLButtonElement>('[data-replay]')!;
+    const live = [...fig.querySelectorAll<Element>('[data-live]')];
+    const prompt = fig.querySelector<HTMLElement>('[data-prompt]')!;
+    const lines = prompt.querySelectorAll('.ln').length;
+    const agentMark = fig.querySelector<SVGGElement>('[data-agent]')!;
+    const dashed = fig.querySelector<HTMLElement>('[data-dashed]')!;
+    const frame = fig.querySelector<HTMLElement>('[data-frame]')!;
+    const duo = fig.querySelector<HTMLElement>('[data-duo]')!;
+    const pair = fig.querySelector<HTMLElement>('[data-pair]')!;
+    const [model, plus, harness, equals, sum] = [...pair.children] as HTMLElement[];
+    // Stacked, the container sits a screen below the prompt, so the opening
+    // waits until the reader has it in view.
+    const stacked = matchMedia('(max-width: 1140px)');
+    let timers: number[] = [];
+    let seen: IntersectionObserver | null = null;
+    const whenSeen = (el: Element, fn: () => void) => {
+      seen = new IntersectionObserver(([e]) => {
+        if (!e.isIntersecting) return;
+        seen?.disconnect(); seen = null;
+        fn();
+      }, { threshold: 0.6 });
+      seen.observe(el);
+    };
+    let ghost: HTMLElement | null = null;
+
+    const phase = (n: number) => parts.forEach((p) => p.classList.toggle('on', Number((p as HTMLElement).dataset.at) <= n));
+    // Only running the program touches the simulator: while "run" is lit, the
+    // path client.py → simulator → budget lights with it, and only then is
+    // the budget charged. Writing, reading and editing cost no steps.
+    const hot = (i: number) => {
+      steps.forEach((s, j) => s.classList.toggle('hot', j === i));
+      const running = steps[i]?.dataset.step === 'run';
+      live.forEach((e) => e.classList.toggle('live', running));
+    };
+    const budget = (f: number) => {
+      fill.style.transform = `scaleX(${f / FILL})`;
+      frontier.style.transform = `translateX(${(f - FILL) * 388}px)`;
+    };
+    const at = (ms: number, fn: () => void) => timers.push(window.setTimeout(fn, ms));
+
+    // The hand-off: a copy of the prompt panel (prompt, views, task) shrinks
+    // along the arrow into the agent, which then swells once to take it.
+    // Measured at play time, so it follows the arrow sideways or, stacked,
+    // downwards. The panel itself stays put and readable.
+    const FLY = 900;
+    function send() {
+      const f = fig.getBoundingClientRect(), p = prompt.getBoundingClientRect(), a = agentMark.getBoundingClientRect();
+      ghost = prompt.cloneNode(true) as HTMLElement;
+      ghost.removeAttribute('data-prompt');
+      ghost.removeAttribute('aria-label');
+      ghost.setAttribute('aria-hidden', 'true');
+      ghost.classList.add('ghost');
+      Object.assign(ghost.style, { left: `${p.left - f.left}px`, top: `${p.top - f.top}px`, width: `${p.width}px`, height: `${p.height}px` });
+      fig.append(ghost);
+      const s = (a.width * 0.9) / p.width;
+      const dx = a.left + a.width / 2 - (p.left + (p.width * s) / 2);
+      const dy = a.top + a.height / 2 - (p.top + (p.height * s) / 2);
+      const g = ghost;
+      g.animate([
+        { transform: 'none', opacity: 1 },
+        { opacity: 1, offset: 0.7 },
+        { transform: `translate(${dx}px, ${dy}px) scale(${s})`, opacity: 0 },
+      ], { duration: FLY, easing: 'cubic-bezier(0.55, 0, 0.25, 1)', fill: 'forwards' }).finished
+        .then(() => { g.remove(); if (ghost === g) ghost = null; }, () => {});
+    }
+    const take = () => {
+      agentMark.classList.remove('take');
+      void agentMark.getBoundingClientRect(); // restart the swell on replay
+      agentMark.classList.add('take');
+    };
+
+    // The opening, written out as a sum: the model, plus the harness, equals
+    // the agent. Then the two terms join and shrink together into the agent's
+    // place in the loop, and the container's frame grows out from the agent
+    // until it holds the loop.
+    const INTRO = 4500; // until the frame has closed
+    function intro(t: number) {
+      const ease = 'cubic-bezier(0.16, 1, 0.3, 1)';
+      const opt = (duration: number, delay = 0, easing = ease) => ({ duration, delay, easing, fill: 'both' as FillMode });
+      const pop = [{ opacity: 0, transform: 'scale(0.4)' }, { opacity: 1, transform: 'none' }];
+      at(t, () => {
+        duo.classList.add('show');
+        model.animate([{ opacity: 0, transform: 'translateX(-2rem) scale(0.9)' }, { opacity: 1, transform: 'none' }], opt(650));
+        plus.animate(pop, opt(400, 450));
+        harness.animate([{ opacity: 0, transform: 'translateX(2rem) scale(0.9)' }, { opacity: 1, transform: 'none' }], opt(650, 650));
+        equals.animate(pop, opt(400, 1250));
+        sum.animate([{ opacity: 0, transform: 'translateY(0.4rem) scale(0.85)' }, { opacity: 1, transform: 'none' }], opt(600, 1450));
+      });
+      // Join: the operators and the result give way and the two terms close
+      // the gap. From the layout, not the screen, so an unfinished entrance
+      // can't skew it.
+      const JOIN = t + 2400;
+      at(JOIN, () => {
+        const d = (harness.offsetLeft - model.offsetLeft - model.offsetWidth) / 2 - 6;
+        const glide = 'cubic-bezier(0.65, 0, 0.35, 1)';
+        [plus, equals, sum].forEach((e) => e.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(0.6)' }], opt(300)));
+        pair.querySelectorAll('.who span').forEach((e) => e.animate([{ opacity: 1 }, { opacity: 0 }], opt(300)));
+        model.animate([{ transform: 'none' }, { transform: `translateX(${d}px)` }], opt(550, 150, glide));
+        harness.animate([{ transform: 'none' }, { transform: `translateX(${-d}px)` }], opt(550, 150, glide));
+      });
+      // Settle: the joined pair flies into the agent's place, which takes over.
+      const FLY_IN = 750, SETTLE = JOIN + 850;
+      at(SETTLE, () => {
+        const h = model.getBoundingClientRect(), m = harness.getBoundingClientRect();
+        const o = pair.getBoundingClientRect(), a = agentMark.getBoundingClientRect();
+        const c = { x: (h.left + m.right) / 2, y: (Math.min(h.top, m.top) + Math.max(h.bottom, m.bottom)) / 2 };
+        const k = Math.min(a.width / (m.right - h.left), a.height / (Math.max(h.bottom, m.bottom) - Math.min(h.top, m.top)));
+        const dx = a.left + a.width / 2 - o.left - (c.x - o.left) * k;
+        const dy = a.top + a.height / 2 - o.top - (c.y - o.top) * k;
+        pair.animate([
+          { transform: 'none', opacity: 1 },
+          { opacity: 1, offset: 0.75 },
+          { transform: `translate(${dx}px, ${dy}px) scale(${k})`, opacity: 0 },
+        ], opt(FLY_IN, 0, 'cubic-bezier(0.55, 0, 0.2, 1)'));
+      });
+      // The agent appears where the pair lands, and the frame grows out of it.
+      at(SETTLE + FLY_IN - 200, () => {
+        const d = dashed.getBoundingClientRect(), a = agentMark.getBoundingClientRect();
+        const pad = 14;
+        const from = {
+          top: `${a.top - d.top - pad}px`, left: `${a.left - d.left - pad}px`,
+          right: `${d.right - a.right - pad}px`, bottom: `${d.bottom - a.bottom - pad}px`,
+        };
+        frame.animate([from, { top: '0px', left: '0px', right: '0px', bottom: '0px' }], opt(900, 150, 'cubic-bezier(0.22, 1, 0.36, 1)'));
+        fig.classList.remove('opening');
+        phase(1);
+        take();
+      });
+      at(t + INTRO, () => { duo.classList.remove('show'); duo.getAnimations({ subtree: true }).forEach((x) => x.cancel()); });
+    }
+
+    // The finished diagram: every part shown, budget at its frontier, all
+    // seeds filled, the score in place.
+    function finish() {
+      timers.forEach(clearTimeout);
+      timers = [];
+      seen?.disconnect(); seen = null;
+      fig.classList.remove('opening');
+      ghost?.remove();
+      ghost = null;
+      duo.classList.remove('show');
+      duo.getAnimations({ subtree: true }).forEach((x) => x.cancel());
+      frame.getAnimations().forEach((x) => x.cancel());
+      agentMark.classList.remove('take');
+      fig.classList.remove('animating');
+      demo.classList.remove('hot');
+      hot(-1);
+      fill.style.transform = frontier.style.transform = '';
+      seeds.classList.remove('pending', 'sweep');
+      prompt.classList.remove('typed', 'views-in', 'task-in');
+      show(final);
+    }
+    // The state before the first frame: nothing but the panel headings.
+    function arm() {
+      finish();
+      fig.classList.add('animating', 'opening');
+      phase(0); budget(0);
+      seeds.classList.add('pending');
+      show(0);
+    }
+    function run() {
+      arm();
+      // The prompt arrives a line at a time, then the three camera views of
+      // the demonstration, then the task sentence (delays per item in CSS).
+      at(300, () => prompt.classList.add('typed'));
+      const VIEWS = 300 + lines * 70 + 250;
+      at(VIEWS, () => prompt.classList.add('views-in'));
+      at(VIEWS + 650, () => prompt.classList.add('task-in'));
+      const T = VIEWS + 1500; // then the container, the hand-off and the loop
+      at(T, () => (stacked.matches ? whenSeen(dashed, container) : container()));
+    }
+    // From the opening on; times are from the opening's start.
+    function container() {
+      intro(0);
+      const U = INTRO; // the container is up
+      at(U, () => phase(2));
+      at(U + 300, () => demo.classList.add('hot'));
+      at(U + 900, send);
+      at(U + 900 + FLY - 120, () => { demo.classList.remove('hot'); take(); });
+      at(U + 3000, () => phase(3));
+      // Three turns of the loop; each run charges a third of the spend.
+      const LOOPS = 3, STEP = 420;
+      let runs = 0;
+      for (let i = 0; i < LOOPS * 4; i++) at(U + 3500 + i * STEP, () => {
+        hot(i % 4);
+        if (steps[i % 4].dataset.step === 'run') budget((++runs / LOOPS) * FILL);
+      });
+      const EVAL = U + 3500 + LOOPS * 4 * STEP + 400;
+      at(EVAL, () => { hot(-1); phase(4); });
+      // One episode per seed, in seed order (the delays are per cell in CSS,
+      // 24 ms apart); the score counts each success as its cell fills, so it
+      // climbs with the sweep and lands on the rate over all 100 seeds.
+      const SWEEP = EVAL + 800;
+      at(SWEEP, () => { seeds.classList.remove('pending'); seeds.classList.add('sweep'); });
+      let won = 0;
+      cells.forEach((c, i) => { if (c.classList.contains('ok')) { const n = ++won; at(SWEEP + i * 24 + 80, () => show(n)); } });
+      at(SWEEP + cells.length * 24 + 900, finish);
+    }
+
+    // Held at its first frame until the figure is well on screen (its top
+    // past the middle of the viewport), so nobody arrives to a finished one.
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      io.disconnect();
+      run();
+    }, { rootMargin: '0px 0px -45% 0px' });
+    if (!reduce.matches) {
+      arm();
+      io.observe(fig);
+      replay.hidden = false;
+    }
+    replay.addEventListener('click', run);
+    const more = fig.querySelector<HTMLButtonElement>('[data-more]')!;
+    more.addEventListener('click', () => {
+      const open = prompt.classList.toggle('open');
+      more.setAttribute('aria-expanded', String(open));
+      more.textContent = open ? 'Less' : 'Full prompt';
+    });
+    reduce.addEventListener('change', () => {
+      replay.hidden = reduce.matches;
+      if (reduce.matches) { io.disconnect(); finish(); }
+    });
+  }
+</script>
+
+<style>
+  .proto { margin: 0; font-family: var(--sans); }
+  .panels { display: grid; grid-template-columns: 17.5rem 2.5rem minmax(0, 1fr) 2.5rem 13.5rem; align-items: stretch; }
+  .panel { display: flex; flex-direction: column; min-width: 0; }
+  h4 { display: flex; align-items: center; justify-content: center; gap: 0.45rem; margin: 0 0 0.6rem; font-size: 0.9375rem; font-weight: 700; color: var(--ink-2); }
+  h4 img { width: 1.35rem; height: auto; }
+
+  .card { margin: 0; padding: 0.7rem 0.8rem; border: 1px solid var(--rule-strong); border-radius: var(--r-md); background: var(--paper); }
+  pre.card { font-family: var(--mono); font-size: 0.75rem; line-height: 1.5; color: var(--ink); white-space: pre; overflow-x: auto; }
+
+  .views { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; margin-top: 0.8rem; padding: 3px; border-radius: var(--r-sm); outline: 2px solid transparent; transition: outline-color 300ms var(--ease-out); }
+  .views.hot { outline-color: var(--accent); }
+  .views figure { margin: 0; display: flex; flex-direction: column-reverse; }
+  .views img { display: block; width: 100%; height: auto; }
+  .views figcaption { font-family: var(--mono); font-size: 0.6875rem; line-height: 1.6; color: var(--ink-3); }
+  .task { margin: 0.5rem 0 0; font-family: var(--mono); font-size: 0.75rem; line-height: 1.5; color: var(--ink); }
+  .task span { color: var(--ink-3); }
+
+  .link { display: flex; align-items: center; justify-content: center; position: relative; color: var(--ink-3); }
+  .link svg:first-child { width: 2rem; overflow: visible; }
+  .link path { fill: none; stroke: currentColor; stroke-width: 1.6; }
+  .link path.head, .down path.head { fill: currentColor; stroke: none; }
+  .flake { position: absolute; width: 1.1rem; top: calc(50% - 1.6rem); color: var(--accent); }
+
+  .dashed { position: relative; isolation: isolate; flex: 1; display: flex; align-items: center; justify-content: center; padding: 0.9rem; }
+  /* The container's outline, its own layer so the opening can grow it. */
+  .frame { position: absolute; inset: 0; z-index: -1; border: 1.5px dashed var(--rule-strong); border-radius: var(--r-lg); background: var(--paper-2); }
+  .loop { display: block; width: 100%; max-width: 25rem; height: auto; overflow: visible; color: var(--ink); }
+  /* Sized in SVG units so that at the narrowest phone the labels land at ~11px. */
+  .loop .t { font-family: var(--sans); font-size: 14px; fill: var(--ink); }
+  .loop .b { font-weight: 700; }
+  .loop .dim { fill: var(--ink-2); }
+  .loop .m { font-family: var(--mono); font-size: 13.5px; fill: var(--ink); }
+  .loop .lbl { font-family: var(--sans); font-size: 13.5px; fill: var(--ink-3); }
+  .loop .agent svg { fill: var(--ink); }
+  .loop marker path { fill: context-stroke; }
+  .loop .cyc { fill: none; stroke: var(--accent); stroke-width: 1.6; }
+  .loop .pipe { fill: none; stroke: var(--ink-3); stroke-width: 1.5; }
+  .loop .cost { fill: none; stroke: var(--accent); stroke-width: 1.5; }
+  .loop [data-live] { transition: stroke 200ms var(--ease-out), stroke-width 200ms var(--ease-out); }
+  .loop .pipe.live, .loop .sim.live { stroke: var(--accent); stroke-width: 2; }
+  .loop .cost.live { stroke-width: 2.4; }
+  .loop marker { overflow: visible; }
+  .loop .step rect { fill: var(--accent-wash); stroke: var(--accent); stroke-width: 1.2; transition: fill 200ms var(--ease-out); }
+  .loop .step.hot rect { fill: color-mix(in oklch, var(--accent) 38%, var(--paper)); }
+  .loop .srv { fill: var(--paper); stroke: var(--ink-3); stroke-width: 1.2; }
+  .loop .sim { fill: var(--paper); stroke: var(--rule-strong); stroke-width: 1.2; }
+  .loop .snow, .link .snow { fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-linecap: round; }
+  .loop .bar { fill: var(--paper); stroke: var(--rule-strong); stroke-width: 1; }
+  .loop .fill { fill: color-mix(in oklch, var(--accent) 28%, var(--paper)); transform-box: fill-box; transform-origin: left; transition: transform 450ms var(--ease-out); }
+  .loop .frontier { stroke: var(--accent); stroke-width: 1.6; transition: transform 450ms var(--ease-out); }
+
+  .eval { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.7rem; background: var(--paper-2); border-radius: var(--r-lg); }
+  .file { margin: 0; display: flex; align-items: center; gap: 0.3rem; font-size: 0.8125rem; color: var(--ink-3); }
+  .file code { font-family: var(--mono); }
+  .seeds { display: grid; grid-template-columns: repeat(10, 0.7rem); gap: 0.3rem; }
+  /* Success filled, failure an empty cell. */
+  .seeds span { width: 0.7rem; height: 0.7rem; border-radius: 2px; box-shadow: inset 0 0 0 1px var(--rule-strong); }
+  .seeds .ok { background: var(--accent); box-shadow: none; }
+  /* Replay: seeds start empty and fill one episode at a time. */
+  .seeds.pending .ok { background: transparent; box-shadow: inset 0 0 0 1px var(--rule-strong); }
+  .seeds.sweep span { transition: background-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out); transition-delay: calc(var(--i) * 24ms); }
+  .eval .lbl { margin: 0; font-size: 0.8125rem; line-height: 1.4; text-align: center; color: var(--ink-3); }
+  .down { width: 0.75rem; color: var(--ink-3); }
+  .down path { fill: none; stroke: currentColor; stroke-width: 1.6; }
+  .score { margin: 0; font-size: 1rem; font-weight: 600; color: var(--ink-2); }
+  .score b { font-size: 1.375rem; font-weight: 750; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
+
+  .foot { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-top: 0.9rem; }
+  .replay {
+    flex: none; display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.75rem 0.3rem 0.6rem;
+    border: 1px solid var(--rule); border-radius: 999px; background: var(--paper); color: var(--ink-2);
+    font: inherit; font-size: 0.8125rem; font-weight: 600; cursor: pointer;
+    transition-property: color, border-color, scale; transition-duration: 140ms;
+  }
+  .replay[hidden] { display: none; }
+  @media (hover: hover) { .replay:hover { color: var(--ink); border-color: var(--rule-strong); } }
+  .replay:active { scale: 0.96; }
+  .replay:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  figcaption#proto-cap { margin-top: 0; font-size: 0.8125rem; line-height: 1.55; color: var(--ink-3); max-width: 62ch; }
+  figcaption code { font-family: var(--mono); font-size: 0.9em; }
+
+  /* Replay of the prompt panel: lines, then views, then the task. */
+  .prompt .ln, .views figure, .task { transition: opacity 220ms var(--ease-out), translate 220ms var(--ease-out); }
+  .animating .prompt:not(.typed) .ln { opacity: 0; }
+  .prompt.typed .ln { transition-delay: calc(var(--i) * 70ms); }
+  .animating .prompt:not(.views-in) .views figure { opacity: 0; translate: 0 6px; }
+  .prompt.views-in .views figure { transition-delay: calc(var(--i) * 160ms); }
+  .animating .prompt:not(.task-in) .task { opacity: 0; translate: 0 4px; }
+
+  /* Replay: the hand-off copy in flight, and the agent taking it. */
+  .proto { position: relative; }
+  .ghost {
+    position: absolute; z-index: 5; margin: 0; pointer-events: none;
+    transform-origin: 0 0; will-change: transform, opacity;
+    padding: 0.5rem; border-radius: var(--r-md); background: var(--paper);
+    box-shadow: var(--shadow-lift), 0 0 0 1px var(--rule-strong);
+  }
+  .ghost h4 { display: none; }
+  .loop .agent { transform-box: fill-box; transform-origin: center; }
+
+  /* Replay: the opening's harness and model, before they join. */
+  .duo { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; visibility: hidden; }
+  .duo.show { visibility: visible; }
+  .pair { display: flex; align-items: center; gap: 1.4rem; transform-origin: 0 0; will-change: transform, opacity; }
+  .who { display: flex; flex-direction: column; align-items: center; gap: 0.45rem; will-change: transform, opacity; }
+  .who svg { width: 3.75rem; height: 3.75rem; fill: var(--ink); }
+  .who b { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.015em; color: var(--ink); white-space: nowrap; }
+  .who span { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.04em; color: var(--ink-3); }
+  /* The operators sit level with the marks, the result level with the names. */
+  .op { align-self: flex-start; margin-top: 1.1rem; font-size: 1.75rem; font-weight: 300; line-height: 1; color: var(--ink-3); }
+  .sum { align-self: flex-start; margin-top: 1rem; padding: 0.2rem 0.7rem; border: 1.5px dashed var(--accent); border-radius: var(--r-md); font-size: 1.25rem; font-weight: 700; color: var(--accent-ink); white-space: nowrap; }
+  .loop .agent.take { animation: take 650ms var(--ease-out); }
+  @keyframes take { 35% { transform: scale(1.16); } }
+
+  /* Replay: parts not yet reached are hidden. */
+  [data-at] { transition: opacity 500ms var(--ease-out); }
+  .animating [data-at]:not(.on) { opacity: 0; }
+
+  /* Narrower than the three panels need: stack them, arrows pointing down. */
+  @media (max-width: 1140px) {
+    .panels { grid-template-columns: minmax(0, 1fr); max-width: 34rem; margin-inline: auto; }
+    .link { height: 2.75rem; }
+    .link svg:first-child { rotate: 90deg; }
+    .flake { top: auto; left: calc(50% + 1.1rem); }
+    .eval { padding-block: 1.1rem; }
+  }
+  @media (max-width: 520px) { .dashed { padding: 0.6rem 0.4rem; } }
+  /* Stacked, a part waiting its turn would leave a screen of blank page, and
+     showing it late would push everything below down on every loop; so the
+     whole diagram is there and only the highlights and the budget replay. */
+  @media (max-width: 1140px) { .animating [data-at]:not(.on) { opacity: 1; } }
+  /* Stacked, the whole diagram keeps its place; only the loop and the frame
+     wait out the opening, faded, so nothing below moves. */
+  .loop { transition: opacity 500ms var(--ease-out); }
+  @media (max-width: 1140px) { .proto.opening .loop, .proto.opening .frame[data-frame] { opacity: 0; } }
+  /* Phones: the sum at a size that fits the container. */
+  @media (max-width: 640px) {
+    .pair { gap: 0.7rem; }
+    .who { gap: 0.3rem; }
+    .who svg { width: 2.6rem; height: 2.6rem; }
+    .who b { font-size: 1rem; }
+    .who span { font-size: 0.6875rem; }
+    .op { margin-top: 0.7rem; font-size: 1.35rem; }
+    .sum { margin-top: 0.65rem; padding: 0.15rem 0.5rem; font-size: 1rem; }
+  }
+
+  /* The prompt's fold, only on phones. */
+  .more { display: none; }
+
+  /* Phones: nothing under ~12.5px. The prompt shows its first sentence and
+     fades out until opened, and the caption, which repeats the section's
+     lede, gives way to the Replay button alone. */
+  @media (max-width: 640px) {
+    pre.card, .task { font-size: 0.78125rem; }
+    .views figcaption { font-size: 0.75rem; }
+    .prompt:not(.open) pre.card {
+      max-height: calc(4.7lh + 0.7rem); overflow: hidden;
+      mask-image: linear-gradient(to bottom, #000 calc(100% - 1.4lh), transparent);
+    }
+    .more {
+      display: block; align-self: center; margin-top: 0.5rem; padding: 0.25rem 0.75rem;
+      border: 1px solid var(--rule); border-radius: 999px; background: var(--paper); color: var(--ink-2);
+      font: inherit; font-size: 0.8125rem; font-weight: 600; cursor: pointer; position: relative;
+    }
+    .more:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .ghost .more { display: none; }
+    figcaption#proto-cap { display: none; }
+    /* The evaluation reads across: the seeds, then the score beside them. */
+    .eval { display: grid; grid-template-columns: auto auto; grid-template-areas: "file file" "seeds score" "lbl lbl"; justify-content: center; align-items: center; gap: 0.6rem 1.5rem; padding-block: 0.9rem; }
+    .file { grid-area: file; justify-self: center; }
+    .seeds { grid-area: seeds; }
+    .eval .lbl { grid-area: lbl; }
+    .score { grid-area: score; display: flex; flex-direction: column; align-items: center; line-height: 1.2; font-size: 0.875rem; }
+    .score b { font-size: 1.75rem; }
+    .down { display: none; }
+    .foot { justify-content: flex-end; }
+  }
+</style>

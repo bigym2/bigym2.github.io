@@ -1,0 +1,973 @@
+{
+  "generations": [
+    {
+      "id": "single",
+      "label": "Single light",
+      "caption": "Success rate (%) on nine representative tasks, in the current scene lit by one light that follows the robot. The best result in each row is bold.",
+      "footnote": "ACT, DP, CQN-AS, DrQ-v2+ and DEAS: mean ± SE across three training runs, each averaging its last five checkpoints at 100 episodes. π0.5: one training run per task, pooled over its last five checkpoints at 50 episodes, so no SE. Coding agents: three independent development sessions each under the strict interface (84×84 onboard views, direct joint actions, no kinematics tools), 100 episodes per frozen program, mean ± SE across sessions.",
+      "groups": [
+        {
+          "label": "VLA",
+          "methods": [
+            "pi05"
+          ]
+        },
+        {
+          "label": "Imitation learning",
+          "methods": [
+            "act",
+            "dp"
+          ]
+        },
+        {
+          "label": "Demo-driven RL",
+          "methods": [
+            "cqnas",
+            "drq",
+            "deas"
+          ]
+        },
+        {
+          "label": "Coding agent",
+          "methods": [
+            "opus",
+            "astra"
+          ]
+        }
+      ],
+      "methods": [
+        {
+          "id": "pi05",
+          "label": "π0.5"
+        },
+        {
+          "id": "act",
+          "label": "ACT"
+        },
+        {
+          "id": "dp",
+          "label": "DP"
+        },
+        {
+          "id": "cqnas",
+          "label": "CQN-AS"
+        },
+        {
+          "id": "drq",
+          "label": "DrQ-v2+"
+        },
+        {
+          "id": "deas",
+          "label": "DEAS"
+        },
+        {
+          "id": "opus",
+          "label": "Claude Opus 5.5",
+          "sublabel": "strict",
+          "emphasis": true,
+          "short": "Opus 5.5",
+          "logo": "claude",
+          "series": "opus",
+          "harness": {
+            "name": "Claude Code",
+            "version": "2.1.280",
+            "mark": "claude-code"
+          }
+        },
+        {
+          "id": "astra",
+          "label": "GPT-6 Astra",
+          "sublabel": "strict",
+          "emphasis": true,
+          "short": "GPT-6 Astra",
+          "logo": "openai",
+          "series": "astra",
+          "harness": {
+            "name": "Codex CLI",
+            "version": "0.153.4",
+            "mark": "codex"
+          }
+        }
+      ],
+      "pending": [],
+      "rows": [
+        {
+          "task": "pick_box",
+          "label": "Pick box",
+          "values": {
+            "pi05": {
+              "mean": 19.0,
+              "se": null,
+              "partial": false
+            },
+            "act": {
+              "mean": 61.0,
+              "se": 4.0,
+              "partial": false
+            },
+            "dp": {
+              "mean": 10.0,
+              "se": 3.0,
+              "partial": false
+            },
+            "cqnas": {
+              "mean": 48.0,
+              "se": 2.0,
+              "partial": false
+            },
+            "drq": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "deas": {
+              "mean": 14.0,
+              "se": 3.0,
+              "partial": false
+            },
+            "opus": {
+              "mean": 71.0,
+              "se": 16.0,
+              "partial": false
+            },
+            "astra": {
+              "mean": 54.0,
+              "se": 22.0,
+              "partial": false
+            }
+          }
+        },
+        {
+          "task": "reach_target_multi_modal",
+          "label": "Reach multi-modal",
+          "values": {
+            "pi05": {
+              "mean": 90.0,
+              "se": null,
+              "partial": false
+            },
+            "act": {
+              "mean": 81.0,
+              "se": 1.0,
+              "partial": false
+            },
+            "dp": {
+              "mean": 84.0,
+              "se": 1.0,
+              "partial": false
+            },
+            "cqnas": {
+              "mean": 19.0,
+              "se": 16.0,
+              "partial": false
+            },
+            "drq": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "deas": {
+              "mean": 79.0,
+              "se": 2.0,
+              "partial": false
+            },
+            "opus": {
+              "mean": 100.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "astra": {
+              "mean": 89.0,
+              "se": 7.0,
+              "partial": false
+            }
+          }
+        },
+        {
+          "task": "reach_target_dual",
+          "label": "Reach dual",
+          "values": {
+            "pi05": {
+              "mean": 58.0,
+              "se": null,
+              "partial": false
+            },
+            "act": {
+              "mean": 30.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "dp": {
+              "mean": 27.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "cqnas": {
+              "mean": 3.0,
+              "se": 1.0,
+              "partial": false
+            },
+            "drq": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "deas": {
+              "mean": 34.0,
+              "se": 1.0,
+              "partial": false
+            },
+            "opus": {
+              "mean": 78.0,
+              "se": 10.0,
+              "partial": false
+            },
+            "astra": {
+              "mean": 89.0,
+              "se": 7.0,
+              "partial": false
+            }
+          }
+        },
+        {
+          "task": "drawer_top_close",
+          "label": "Drawer close",
+          "values": {
+            "pi05": {
+              "mean": 100.0,
+              "se": null,
+              "partial": false
+            },
+            "act": {
+              "mean": 100.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "dp": {
+              "mean": 100.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "cqnas": {
+              "mean": 100.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "drq": {
+              "mean": 99.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "deas": {
+              "mean": 100.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "opus": {
+              "mean": 100.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "astra": {
+              "mean": 99.0,
+              "se": 1.0,
+              "partial": false
+            }
+          }
+        },
+        {
+          "task": "drawer_top_open",
+          "label": "Drawer open",
+          "values": {
+            "pi05": {
+              "mean": 99.0,
+              "se": null,
+              "partial": false
+            },
+            "act": {
+              "mean": 92.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "dp": {
+              "mean": 98.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "cqnas": {
+              "mean": 89.0,
+              "se": 2.0,
+              "partial": false
+            },
+            "drq": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "deas": {
+              "mean": 79.0,
+              "se": 4.0,
+              "partial": false
+            },
+            "opus": {
+              "mean": 99.0,
+              "se": 1.0,
+              "partial": false
+            },
+            "astra": {
+              "mean": 99.0,
+              "se": 1.0,
+              "partial": false
+            }
+          }
+        },
+        {
+          "task": "move_plate",
+          "label": "Move plate",
+          "values": {
+            "pi05": {
+              "mean": 65.0,
+              "se": null,
+              "partial": false
+            },
+            "act": {
+              "mean": 60.0,
+              "se": 1.0,
+              "partial": false
+            },
+            "dp": {
+              "mean": 62.0,
+              "se": 4.0,
+              "partial": false
+            },
+            "cqnas": {
+              "mean": 48.0,
+              "se": 3.0,
+              "partial": false
+            },
+            "drq": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "deas": {
+              "mean": 27.0,
+              "se": 3.0,
+              "partial": false
+            },
+            "opus": {
+              "mean": 20.0,
+              "se": 2.0,
+              "partial": false
+            },
+            "astra": {
+              "mean": 14.0,
+              "se": 11.0,
+              "partial": false
+            }
+          }
+        },
+        {
+          "task": "move_two_plates",
+          "label": "Move two plates",
+          "values": {
+            "pi05": {
+              "mean": 68.0,
+              "se": null,
+              "partial": false
+            },
+            "act": {
+              "mean": 39.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "dp": {
+              "mean": 18.0,
+              "se": 4.0,
+              "partial": false
+            },
+            "cqnas": {
+              "mean": 21.0,
+              "se": 3.0,
+              "partial": false
+            },
+            "drq": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "deas": {
+              "mean": 2.0,
+              "se": 1.0,
+              "partial": false
+            },
+            "opus": {
+              "mean": 15.0,
+              "se": 4.0,
+              "partial": false
+            },
+            "astra": {
+              "mean": 16.0,
+              "se": 11.0,
+              "partial": false
+            }
+          }
+        },
+        {
+          "task": "dishwasher_close",
+          "label": "Dishwasher close",
+          "values": {
+            "pi05": {
+              "mean": 79.0,
+              "se": null,
+              "partial": false
+            },
+            "act": {
+              "mean": 93.0,
+              "se": 5.0,
+              "partial": false
+            },
+            "dp": {
+              "mean": 51.0,
+              "se": 2.0,
+              "partial": false
+            },
+            "cqnas": {
+              "mean": 78.0,
+              "se": 1.0,
+              "partial": false
+            },
+            "drq": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "deas": {
+              "mean": 27.0,
+              "se": 3.0,
+              "partial": false
+            },
+            "opus": {
+              "mean": 33.0,
+              "se": 33.0,
+              "partial": false
+            },
+            "astra": {
+              "mean": 100.0,
+              "se": 0.0,
+              "partial": false
+            }
+          }
+        },
+        {
+          "task": "dishwasher_load_cups",
+          "label": "Dishwasher load cups",
+          "values": {
+            "pi05": {
+              "mean": 92.0,
+              "se": null,
+              "partial": false
+            },
+            "act": {
+              "mean": 56.0,
+              "se": 3.0,
+              "partial": false
+            },
+            "dp": {
+              "mean": 51.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "cqnas": {
+              "mean": 47.0,
+              "se": 7.0,
+              "partial": false
+            },
+            "drq": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "deas": {
+              "mean": 6.0,
+              "se": 2.0,
+              "partial": false
+            },
+            "opus": {
+              "mean": 28.0,
+              "se": 27.0,
+              "partial": false
+            },
+            "astra": {
+              "mean": 21.0,
+              "se": 4.0,
+              "partial": false
+            }
+          }
+        }
+      ],
+      "mean": {
+        "pi05": 75.0,
+        "act": 68.0,
+        "dp": 56.0,
+        "cqnas": 50.0,
+        "drq": 11.0,
+        "deas": 41.0,
+        "opus": 61.0,
+        "astra": 65.0
+      }
+    },
+    {
+      "id": "three",
+      "label": "Three lights",
+      "caption": "Success rate (%) on nine representative tasks in the earlier scene, lit by three lights that followed the robot, as first reported. Learned methods: mean ± SE across three training runs, each averaging its last five checkpoints at 100 episodes. π0.5: one run per task, pooled over five 50-episode checkpoints. Astra: three independent development sessions, 100 episodes per frozen program.",
+      "footnote": "† last-five-available window.",
+      "groups": [
+        {
+          "label": "VLA",
+          "methods": [
+            "pi05"
+          ]
+        },
+        {
+          "label": "Imitation learning",
+          "methods": [
+            "act",
+            "dp"
+          ]
+        },
+        {
+          "label": "Demo-driven RL",
+          "methods": [
+            "cqnas",
+            "drq",
+            "deas"
+          ]
+        },
+        {
+          "label": "Coding agent",
+          "methods": [
+            "astra"
+          ]
+        }
+      ],
+      "methods": [
+        {
+          "id": "pi05",
+          "label": "π0.5"
+        },
+        {
+          "id": "act",
+          "label": "ACT"
+        },
+        {
+          "id": "dp",
+          "label": "DP"
+        },
+        {
+          "id": "cqnas",
+          "label": "CQN-AS"
+        },
+        {
+          "id": "drq",
+          "label": "DrQ-v2+"
+        },
+        {
+          "id": "deas",
+          "label": "DEAS"
+        },
+        {
+          "id": "astra",
+          "label": "GPT-6 Astra",
+          "sublabel": "strict",
+          "emphasis": true,
+          "short": "GPT-6 Astra",
+          "logo": "openai",
+          "series": "astra"
+        }
+      ],
+      "rows": [
+        {
+          "task": "pick_box",
+          "label": "Pick box",
+          "values": {
+            "pi05": {
+              "mean": 12.0,
+              "se": null,
+              "partial": false
+            },
+            "act": {
+              "mean": 62.0,
+              "se": 1.0,
+              "partial": false
+            },
+            "dp": {
+              "mean": 13.0,
+              "se": 3.0,
+              "partial": false
+            },
+            "cqnas": {
+              "mean": 42.0,
+              "se": 3.0,
+              "partial": false
+            },
+            "drq": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "deas": {
+              "mean": 11.0,
+              "se": 3.0,
+              "partial": false
+            },
+            "astra": {
+              "mean": 24.0,
+              "se": 20.0,
+              "partial": false
+            }
+          }
+        },
+        {
+          "task": "reach_target_multi_modal",
+          "label": "Reach multi-modal",
+          "values": {
+            "pi05": {
+              "mean": 54.0,
+              "se": null,
+              "partial": false
+            },
+            "act": {
+              "mean": 79.0,
+              "se": 1.0,
+              "partial": false
+            },
+            "dp": {
+              "mean": 82.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "cqnas": {
+              "mean": 21.0,
+              "se": 21.0,
+              "partial": false
+            },
+            "drq": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "deas": {
+              "mean": 87.0,
+              "se": 3.0,
+              "partial": false
+            },
+            "astra": {
+              "mean": 100.0,
+              "se": 0.0,
+              "partial": false
+            }
+          }
+        },
+        {
+          "task": "reach_target_dual",
+          "label": "Reach dual",
+          "values": {
+            "pi05": {
+              "mean": 57.0,
+              "se": null,
+              "partial": false
+            },
+            "act": {
+              "mean": 27.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "dp": {
+              "mean": 22.0,
+              "se": 3.0,
+              "partial": false
+            },
+            "cqnas": {
+              "mean": 5.0,
+              "se": 1.0,
+              "partial": false
+            },
+            "drq": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "deas": {
+              "mean": 30.0,
+              "se": 2.0,
+              "partial": false
+            },
+            "astra": {
+              "mean": 94.0,
+              "se": 2.0,
+              "partial": false
+            }
+          }
+        },
+        {
+          "task": "drawer_top_close",
+          "label": "Drawer close",
+          "values": {
+            "pi05": {
+              "mean": 95.0,
+              "se": null,
+              "partial": false
+            },
+            "act": {
+              "mean": 100.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "dp": {
+              "mean": 100.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "cqnas": {
+              "mean": 100.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "drq": {
+              "mean": 100.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "deas": {
+              "mean": 100.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "astra": {
+              "mean": 100.0,
+              "se": 0.0,
+              "partial": false
+            }
+          }
+        },
+        {
+          "task": "drawer_top_open",
+          "label": "Drawer open",
+          "values": {
+            "pi05": {
+              "mean": 98.0,
+              "se": null,
+              "partial": false
+            },
+            "act": {
+              "mean": 91.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "dp": {
+              "mean": 97.0,
+              "se": 1.0,
+              "partial": false
+            },
+            "cqnas": {
+              "mean": 93.0,
+              "se": 1.0,
+              "partial": false
+            },
+            "drq": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "deas": {
+              "mean": 60.0,
+              "se": 5.0,
+              "partial": false
+            },
+            "astra": {
+              "mean": 55.0,
+              "se": 27.0,
+              "partial": false
+            }
+          }
+        },
+        {
+          "task": "move_plate",
+          "label": "Move plate",
+          "values": {
+            "pi05": {
+              "mean": 70.0,
+              "se": null,
+              "partial": false
+            },
+            "act": {
+              "mean": 66.0,
+              "se": 2.0,
+              "partial": false
+            },
+            "dp": {
+              "mean": 52.0,
+              "se": 2.0,
+              "partial": false
+            },
+            "cqnas": {
+              "mean": 53.0,
+              "se": 2.0,
+              "partial": true
+            },
+            "drq": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "deas": {
+              "mean": 18.0,
+              "se": 2.0,
+              "partial": false
+            },
+            "astra": {
+              "mean": 39.0,
+              "se": 5.0,
+              "partial": false
+            }
+          }
+        },
+        {
+          "task": "move_two_plates",
+          "label": "Move two plates",
+          "values": {
+            "pi05": {
+              "mean": 44.0,
+              "se": null,
+              "partial": false
+            },
+            "act": {
+              "mean": 35.0,
+              "se": 1.0,
+              "partial": false
+            },
+            "dp": {
+              "mean": 18.0,
+              "se": 3.0,
+              "partial": false
+            },
+            "cqnas": {
+              "mean": 10.0,
+              "se": 2.0,
+              "partial": false
+            },
+            "drq": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "deas": {
+              "mean": 2.0,
+              "se": 1.0,
+              "partial": false
+            },
+            "astra": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
+            }
+          }
+        },
+        {
+          "task": "dishwasher_close",
+          "label": "Dishwasher close",
+          "values": {
+            "pi05": {
+              "mean": 80.0,
+              "se": null,
+              "partial": false
+            },
+            "act": {
+              "mean": 68.0,
+              "se": 6.0,
+              "partial": false
+            },
+            "dp": {
+              "mean": 67.0,
+              "se": 6.0,
+              "partial": false
+            },
+            "cqnas": {
+              "mean": 62.0,
+              "se": 22.0,
+              "partial": false
+            },
+            "drq": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "deas": {
+              "mean": 37.0,
+              "se": 8.0,
+              "partial": false
+            },
+            "astra": {
+              "mean": 33.0,
+              "se": 33.0,
+              "partial": false
+            }
+          }
+        },
+        {
+          "task": "dishwasher_load_cups",
+          "label": "Dishwasher load cups",
+          "values": {
+            "pi05": {
+              "mean": 76.0,
+              "se": null,
+              "partial": false
+            },
+            "act": {
+              "mean": 40.0,
+              "se": 3.0,
+              "partial": false
+            },
+            "dp": {
+              "mean": 53.0,
+              "se": 1.0,
+              "partial": false
+            },
+            "cqnas": {
+              "mean": 48.0,
+              "se": 11.0,
+              "partial": true
+            },
+            "drq": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "deas": {
+              "mean": 5.0,
+              "se": 1.0,
+              "partial": false
+            },
+            "astra": {
+              "mean": 32.0,
+              "se": 16.0,
+              "partial": false
+            }
+          }
+        }
+      ],
+      "mean": {
+        "pi05": 65,
+        "act": 63,
+        "dp": 56,
+        "cqnas": 48,
+        "drq": 11,
+        "deas": 39,
+        "astra": 53
+      },
+      "pending": [],
+      "hidden": true
+    }
+  ]
+}

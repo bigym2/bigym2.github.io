@@ -1,0 +1,10 @@
+---
+// The BiGym mark: a "bi" ligature, the i a figure (blue head) at the b, a cupboard.
+// Ink follows the text colour and the head the accent, so it themes with the page.
+interface Props { size?: number; class?: string }
+const { size = 26, class: cls } = Astro.props;
+---
+<svg class:list={['logo', cls]} viewBox="0 0 64 64" width={size} height={size} aria-hidden="true">
+  <path fill="currentColor" fill-rule="evenodd" d="M8 4H20V24H44A12 12 0 0 1 56 36V60H8ZM20 32V52H44V36A4 4 0 0 0 40 32Z" />
+  <circle cx="50" cy="10" r="6" fill="var(--accent)" />
+</svg>
