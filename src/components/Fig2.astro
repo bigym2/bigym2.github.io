@@ -1,7 +1,8 @@
 ---
 // The paper's Fig. 2 (From BiGym to BiGym 2.0), drawn as SVG and animated
 // (src/lib/fig2.js): (a) BiGym's animated legs follow a pelvis command, then
-// (b) a GR00T-WBC rollout squats and walks under height and velocity commands.
+// (b) a GR00T-WBC rollout squats, walks and leans forward under height, velocity
+// and torso-pitch commands.
 // It plays once as it scrolls into view and ends on the paper's figure; the
 // poster is that same figure, shown until the SVG has loaded and without a
 // script. On a narrow screen one panel shows at a time: the view follows the
@@ -19,7 +20,7 @@ import { media } from '../lib/data';
     <div class="stage" data-stage>
       <img class="poster" src={media('fig2/fig2-poster.jpg')} width="1800" height="541" alt="" decoding="async" loading="lazy" />
       <svg data-svg viewBox="0 0 1798.2 540" role="img"
-        aria-label="(a) BiGym: four increments set the H1 pelvis pose; the legs follow height-conditioned kinematic trajectories. (b) BiGym 2.0: velocity and height commands go to frozen GR00T-WBC policies, which drive the G1's legs."></svg>
+        aria-label="(a) BiGym: four increments set the H1 pelvis pose; the legs follow height-conditioned kinematic trajectories. (b) BiGym 2.0: velocity, height and torso-pitch commands go to frozen GR00T-WBC policies, which drive the G1's legs and waist."></svg>
     </div>
     <button type="button" class="replay" data-replay hidden aria-label="Replay the animation" title="Replay"><Icon name="replay" size={16} /></button>
     <div class="track" aria-hidden="true"><i data-progress></i></div>

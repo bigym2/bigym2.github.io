@@ -3,7 +3,8 @@
 // edit the figure there, not here. mountFig2() draws the finished figure into
 // `svg` and returns seek(t): t = 0 and t >= FINISHED are the paper's figure;
 // in between, (a) BiGym's animated legs follow a pelvis command and (b) a
-// GR00T-WBC rollout squats and walks under height and velocity commands.
+// GR00T-WBC rollout squats, walks and leans forward under height, velocity and
+// torso-pitch commands.
 // FOCUS lists when each panel is lit (0 both, 1 = (a), 2 = (b)).
 export function mountFig2(svg, { ICONS, ROBOTS }, viewBase, P = 'fig2-') {
   // ---------------------------------------------------------------- geometry
@@ -189,6 +190,24 @@ export function mountFig2(svg, { ICONS, ROBOTS }, viewBase, P = 'fig2-') {
   const LBA = 0.07, LBB = 0.755, LBC = 0.520;
 
   const g1 = robot(B, ROBOTS.g1, GX, GY, GW, GH);
+  // the two reach targets of the views, where the rollout puts them relative to the robot
+  const BALLS = ROBOTS.g1.tracks.balls;
+  const ballEls = BALLS.rgb.map((c, i) => {
+    const hex = (k) => '#' + c.map((v) => Math.round(255 * Math.min(1, v * k)).toString(16).padStart(2, '0')).join('');
+    const gr = el('radialGradient', { id: ['ballGrad0', 'ballGrad1'][i], cx: 0.38, cy: 0.34, r: 0.70 }, defs);
+    el('stop', { offset: 0, 'stop-color': hex(2.6) }, gr);
+    el('stop', { offset: 0.55, 'stop-color': hex(1.6) }, gr);
+    el('stop', { offset: 1, 'stop-color': hex(0.7) }, gr);
+    return el('circle', { fill: ['url(#ballGrad0)', 'url(#ballGrad1)'][i] }, BALLS.front[i] ? g1.outer : g1.outer.insertBefore(el('g'), g1.wrap));
+  });
+  function placeBalls(f) {
+    BALLS.track[0].forEach((_, i) => {
+      const n = BALLS.track.length, a0 = Math.max(0, Math.min(n - 1, Math.floor(f))), a1 = Math.min(n - 1, a0 + 1), w = Math.max(0, Math.min(1, f - a0));
+      const [u0, v0, r0] = BALLS.track[a0][i], [u1, v1, r1] = BALLS.track[a1][i];
+      ballEls[i].setAttribute('cx', u0 + (u1 - u0) * w); ballEls[i].setAttribute('cy', v0 + (v1 - v0) * w); ballEls[i].setAttribute('r', r0 + (r1 - r0) * w);
+    });
+  }
+  placeBalls(ROBOTS.g1.frames - 1);
   line(B, GX - 0.24, GG, GX + GW + 0.24, GG, { stroke: 'var(--inkGray)', 'stroke-width': L(0.8 * PT) });
   for (let s = 0; s <= 8; s++) {
     const x0 = GX - 0.10 + 0.19 * s;
@@ -206,17 +225,37 @@ export function mountFig2(svg, { ICONS, ROBOTS }, viewBase, P = 'fig2-') {
     el('path', Object.assign({ d: rrect(GX + a * GW, GY - b * GH, GX + c * GW, GY - d * GH, 1.5 * PT) }, callout), cg);
     return { g: cg, u: (a + c) / 2 * ROBOTS.g1.png[0], v: (b + d) / 2 * ROBOTS.g1.png[1] };
   });
-  const camLinks = camFrom.map(([a, b]) => ({ p: el('path', callout, B), x: px(GX + a * GW), y: py(GY - b * GH) }));
-  function placeCams(dx, dy) {
+  const camLinks = camFrom.map(([a, b]) => ({ p: el('path', callout, B), x: px(GX + a * GW), y: py(GY - b * GH),
+    u: a * ROBOTS.g1.png[0], v: b * ROBOTS.g1.png[1] }));
+  // each box and connector end is carried by the torso's matrix at its own point, so a
+  // leaning torso moves the wrist boxes with the wrists; M = null is the paper pose
+  function placeCams(M, lift) {
     ox = OB;
-    camBoxes.forEach((c) => c.g.setAttribute('transform', `translate(${dx} ${dy})`));
-    camLinks.forEach((c) => c.p.setAttribute('d', `M ${c.x + dx} ${c.y + dy} L ${px(VX - 0.14)} ${py(VM)}`));
+    const off = (u, v) => {
+      if (!M) return [0, 0];
+      const [a, b] = carry(g1, M, u, v), [c, d] = rest(g1, u, v);
+      return [a - c, b - d + lift];
+    };
+    camBoxes.forEach((c) => { const [dx, dy] = off(c.u, c.v); c.g.setAttribute('transform', `translate(${dx} ${dy})`); });
+    camLinks.forEach((c) => { const [dx, dy] = off(c.u, c.v); c.p.setAttribute('d', `M ${c.x + dx} ${c.y + dy} L ${px(VX - 0.14)} ${py(VM)}`); });
   }
-  placeCams(0, 0);
+  placeCams(null, 0);
+  const VCOLS = 20, VROWS = Math.ceil(ROBOTS.g1.frames / VCOLS);
+  const viewEls = ['head', 'wristR', 'wristL'].map((f, i) => {
+    const x = VX + i * (VS + VG);
+    const vs = el('svg', { x: px(x), y: py(VY), width: L(VS), height: L(VS), viewBox: '0 0 84 84', preserveAspectRatio: 'none' }, B);
+    el('image', { href: `${viewBase}views_${f}.png`, x: 0, y: 0, width: 84 * VCOLS, height: 84 * VROWS, preserveAspectRatio: 'none',
+      style: 'image-rendering: pixelated' }, vs);
+    return vs;
+  });
+  // the views at motion frame f: the rollout's own onboard renders
+  function placeViews(f) {
+    const k = Math.max(0, Math.min(ROBOTS.g1.frames - 1, Math.round(f))), r = Math.floor(k / VCOLS), c = k % VCOLS;
+    viewEls.forEach((vs) => vs.setAttribute('viewBox', `${c * 84} ${r * 84} 84 84`));
+  }
+  placeViews(ROBOTS.g1.frames - 1);
   ['head', 'wristR', 'wristL'].forEach((f, i) => {
     const x = VX + i * (VS + VG);
-    el('image', { href: `${viewBase}demo_view_${f}.png`, x: px(x), y: py(VY), width: L(VS), height: L(VS), preserveAspectRatio: 'none',
-      style: 'image-rendering: pixelated' }, B);
     el('rect', { x: px(x), y: py(VY), width: L(VS), height: L(VS), rx: L(1.5 * PT), fill: 'none', stroke: 'var(--ruleGray)', 'stroke-width': L(0.5 * PT) }, B);
     text(B, ['head', 'right wrist', 'left wrist'][i], x + VS / 2, VY - VS - 0.20 - 0.05,
       { 'font-size': L(FS.tiny), 'text-anchor': 'middle', fill: 'var(--okGray)', 'dominant-baseline': 'hanging' });
@@ -230,20 +269,21 @@ export function mountFig2(svg, { ICONS, ROBOTS }, viewBase, P = 'fig2-') {
     viewBox: '0.28125 0 70.902344 46.894531', preserveAspectRatio: 'none' }, wbc);
   el('path', { fill: '#76B900', d: 'M 26.714844 13.988281 L 26.714844 9.761719 C 27.132812 9.730469 27.550781 9.714844 27.96875 9.710938 C 39.554688 9.34375 47.152344 19.675781 47.152344 19.675781 C 47.152344 19.675781 38.957031 31.054688 30.164062 31.054688 C 28.988281 31.054688 27.839844 30.871094 26.742188 30.507812 L 26.742188 17.667969 C 31.257812 18.214844 32.171875 20.199219 34.859375 24.714844 L 40.886719 19.648438 C 40.886719 19.648438 36.476562 13.882812 29.066406 13.882812 C 28.28125 13.867188 27.496094 13.902344 26.714844 13.988281 M 26.714844 0 L 26.714844 6.316406 L 27.96875 6.234375 C 44.070312 5.6875 54.585938 19.441406 54.585938 19.441406 C 54.585938 19.441406 42.535156 34.105469 29.976562 34.105469 C 28.886719 34.105469 27.8125 34 26.742188 33.820312 L 26.742188 37.734375 C 27.628906 37.835938 28.546875 37.914062 29.433594 37.914062 C 41.121094 37.914062 49.578125 31.941406 57.769531 24.894531 C 59.128906 25.988281 64.683594 28.625 65.835938 29.773438 C 58.058594 36.296875 39.921875 41.542969 29.636719 41.542969 C 28.648438 41.542969 27.710938 41.492188 26.769531 41.386719 L 26.769531 46.894531 L 71.183594 46.894531 L 71.183594 0 Z M 26.714844 30.503906 L 26.714844 33.84375 C 15.914062 31.914062 12.910156 20.667969 12.910156 20.667969 C 12.910156 20.667969 18.105469 14.925781 26.714844 13.988281 L 26.714844 17.640625 L 26.691406 17.640625 C 22.179688 17.089844 18.628906 21.320312 18.628906 21.320312 C 18.628906 21.320312 20.636719 28.445312 26.71875 30.507812 M 7.539062 20.195312 C 7.539062 20.195312 13.929688 10.753906 26.742188 9.757812 L 26.742188 6.316406 C 12.550781 7.464844 0.28125 19.46875 0.28125 19.46875 C 0.28125 19.46875 7.226562 39.5625 26.714844 41.386719 L 26.714844 37.734375 C 12.417969 35.960938 7.539062 20.195312 7.539062 20.195312 Z' }, nv);
   text(wbc, 'GR00T-WBC', wbcX + 0.17 + nvW + 0.16, CY, { 'font-size': L(FS.script), 'font-weight': 700, fill: '#000', 'dominant-baseline': 'central' });
-  const cmdBW = 2.04, cmdBH = 0.53, cmdBX = wbcX + wbcW / 2;
+  const cmdBW = 2.42, cmdBH = 0.53, cmdBX = wbcX + wbcW / 2;
   const cmdBTop = CY - wbcH / 2 + (QY - CY + 0.32);
   const cmdB = g(B);
   card(cmdB, cmdBX - cmdBW / 2, cmdBTop - cmdBH / 2, cmdBW, cmdBH);
   const dd = L(0.05), fsub = L(FS.math * 0.72), th = ' ';
   const chipB = text(cmdB, '', cmdBX, cmdBTop - cmdBH / 2, { class: 'math', 'font-size': L(FS.math), 'text-anchor': 'middle', 'dominant-baseline': 'central' });
   const termB = {};
-  // (v_x, v_y, ω_z, h): each term a tspan group so the active one can stay dark
+  // (v_x, v_y, ω_z, h, θ): each term a tspan group so the active one can stay dark
   function tsp(s, attrs = {}) { const t = el('tspan', attrs, chipB); t.textContent = s; return t; }
   tsp('(');
   termB.vx = [tsp('𝑣'), tsp('𝑥', { dy: dd, 'font-size': fsub })]; tsp(',' + th, { dy: -dd });
   termB.vy = [tsp('𝑣'), tsp('𝑦', { dy: dd, 'font-size': fsub })]; tsp(',' + th, { dy: -dd });
   termB.wz = [tsp('𝜔'), tsp('𝑧', { dy: dd, 'font-size': fsub })]; tsp(',' + th, { dy: -dd });
-  termB.h = [tsp('ℎ')]; tsp(')');
+  termB.h = [tsp('ℎ')]; tsp(',' + th);
+  termB.pitch = [tsp('𝜃')]; tsp(')');
   const arrBy0 = py(cmdBTop), arrBy1 = py(CY - wbcH / 2);
   line(B, cmdBX, cmdBTop, cmdBX, CY - wbcH / 2 - 0.08, { stroke: 'var(--inkGray)', 'stroke-width': L(0.7 * PT) });
   el('path', { d: stealthD(px(cmdBX), arrBy0, px(cmdBX), arrBy1), fill: 'var(--inkGray)' }, B);
@@ -361,11 +401,10 @@ export function mountFig2(svg, { ICONS, ROBOTS }, viewBase, P = 'fig2-') {
     const tb = t - TB, fb = tb <= 0 ? ROBOTS.g1.frames - 1 : (clamp(tb / DB) * DB + G1SKIP) * ROBOTS.g1.fps;   // before the clip: the paper pose (the rollout's last frame)
     const restB = tb <= 0 || tb >= DB;
     const MB = pose(g1, fb, restB);
-    const c0 = camBoxes[0];
     const boxB = restB ? [0, 0] : f2(ROBOTS.g1.tracks.box, fb), liftB = -boxB[1] * g1.sy;
     g1.mover.setAttribute('transform', `translate(0 ${liftB})`);
-    const [ux, uy] = carry(g1, MB.upper, c0.u, c0.v), [vx, vy] = rest(g1, c0.u, c0.v);
-    placeCams(ux - vx, uy - vy + liftB);
+    placeCams(MB.upper, liftB);
+    placeBalls(fb); placeViews(fb);
     const runB = tb > 0 && tb < DB;
     const hNow = f2(G1H, fb), hLive = clamp(Math.abs(f2(G1H, fb + 4) - f2(G1H, fb - 4)) / 0.003);
     const vxNow = f2(ROBOTS.g1.tracks.vx, fb);
@@ -378,14 +417,16 @@ export function mountFig2(svg, { ICONS, ROBOTS }, viewBase, P = 'fig2-') {
     legBoxB.setAttribute('d', rrect(GX + LBA * GW, topB, GX + LBB * GW, GG, 3 * PT));
     legBoxB.setAttribute('transform', `translate(${bxB} 0)`);
     setTerm(termB.h, hLive, runB);
+    setTerm(termB.pitch, clamp(Math.abs(f2(ROBOTS.g1.tracks.pitch, fb)) / 0.08), runB);
     // chip -> controller; the controller lights; its green wire -> the legs. Once as each
-    // command change begins (rollout: h down 0.5 s, h up 1.8 s, forward 3.0 s, back 4.4 s)
+    // command change begins (rollout: h down 0.5 s, h up 1.8 s, forward 3.0 s, back 4.4 s,
+    // torso pitch forward 7.15 s, back up 8.75 s)
     ox = OB;
     const pB1 = [[px(cmdBX), arrBy0], [px(cmdBX), arrBy1]];
     wireB.setAttribute('d', `M ${px(wbcX)} ${py(wireY)} L ${px(GX + LBB * GW) + bxB} ${py(wireY)}`);
     const pB2 = [[px(wbcX), py(wireY)], [px(GX + LBB * GW) + bxB, py(wireY)]];
     let p1 = 0, p2 = 0, glow = 0;
-    for (const k0 of [-0.05, 1.25, 2.45, 3.85]) {
+    for (const k0 of [-0.05, 1.25, 2.45, 3.85, 6.60, 8.20]) {
       const u = tb - k0;
       if (u >= 0 && u < 0.32) p1 = u / 0.32;
       if (u >= 0.42 && u < 0.80) p2 = (u - 0.42) / 0.38;
