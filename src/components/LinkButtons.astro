@@ -14,7 +14,7 @@ const brand = { arxiv: siArxiv, github: siGithub, huggingface: siHuggingface, yo
     const mark = brand[l.kind as keyof typeof brand];
     const icon = mark
       ? <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path d={mark.path} /></svg>
-      : <Icon name={l.kind === 'pdf' ? 'paper' : 'link'} size={16} />;
+      : <Icon name={l.kind === 'pdf' ? 'paper' : l.kind === 'docs' ? 'book' : 'link'} size={16} />;
     return l.url ? (
       <a class="button" href={l.url} target="_blank" rel="noopener">{icon}<span>{l.label}</span></a>
     ) : (

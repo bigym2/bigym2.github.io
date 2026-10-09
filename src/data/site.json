@@ -70,6 +70,11 @@
       "kind": "github"
     },
     {
+      "label": "Docs",
+      "url": "https://bigym2.github.io/docs/",
+      "kind": "docs"
+    },
+    {
       "label": "Dataset",
       "url": "https://huggingface.co/datasets/SWIRL-Lab/bigym-g1-native60",
       "kind": "huggingface"

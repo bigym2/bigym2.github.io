@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # swirl-uk/BiGym2 sends `docs` after each docs change on its main branch.
+  repository_dispatch:
+    types: [docs]
 
 permissions:
   contents: read
@@ -30,6 +33,22 @@ jobs:
           SITE_URL: ${{ vars.SITE_URL }}
           BASE_PATH: ${{ vars.BASE_PATH }}
           PUBLIC_MEDIA_BASE: ${{ vars.PUBLIC_MEDIA_BASE }}
+      # The docs live with the code in swirl-uk/BiGym2 and are served under /docs/.
+      # BiGym2's own CI builds them with -W, so a warning does not block the site.
+      - uses: actions/checkout@v4
+        with:
+          repository: swirl-uk/BiGym2
+          path: bigym
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: bigym/uv.lock
+      - name: Build docs
+        working-directory: bigym
+        run: |
+          uv sync --group docs
+          uv run --no-sync sphinx-build -b html -d ../doctrees docs ../dist/docs
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
