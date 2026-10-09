@@ -135,6 +135,9 @@ export const agent = z.object({
   // session, served with the page, are then playable).
   rollouts_remote: z.object({
     base: z.string().url(),
+    // Copies with the same layout on hosts reachable where the first is not
+    // (Hugging Face is blocked in mainland China); the first to answer is used.
+    mirrors: z.array(z.string().url()).default([]),
     cameras: z.record(z.string(), z.object({ position: z.tuple([z.number(), z.number(), z.number()]), look_at: z.tuple([z.number(), z.number(), z.number()]) })),
     // The dataset also holds each seed's code trace (trace/<task>/<session>_seed<seed>.json).
     traces: z.boolean().default(false),

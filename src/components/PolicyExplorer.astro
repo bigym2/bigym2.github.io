@@ -19,7 +19,7 @@ const remote = agent.rollouts_remote;
 const payload = {
   policyBase: `${base}/policies`,
   remote: remote ? {
-    base: remote.base.replace(/\/$/, ''),
+    bases: [remote.base, ...remote.mirrors].map((b) => b.replace(/\/$/, '')),
     client: viserPlayer('x.viser', { position: [0, 0, 0], look_at: [0, 0, 0] }).client,
     queries: Object.fromEntries(Object.entries(remote.cameras).map(([t, c]) => [t, viserPlayer('x.viser', c).query])),
     traces: remote.traces,
@@ -203,11 +203,12 @@ const code0 = await highlightPython(sessionSource(src0.files));
   import { followTheme, themed, whenScrollRests } from '../lib/viserTheme';
   import { attachFullscreen } from '../lib/fullscreen';
   import { codeTrace } from '../lib/codeTrace';
+  import { pickHost } from '../lib/datasetHost';
   followTheme();
   type Viser = { client: string; recording: string; query: string };
   type Session = { id: string; label: string; rate: number; vision: string; lines: number; seeds: number[]; outcomes: string; steps: number[]; rollouts: Record<string, { video: string | null; poster: string | null; speed: number; viser: Viser | null; trace: string | null }> };
   type Task = { id: string; name: string; sessions: Session[] };
-  type Payload = { policyBase: string; remote: { base: string; client: string; queries: Record<string, string>; traces: boolean } | null; tasks: Task[] };
+  type Payload = { policyBase: string; remote: { bases: string[]; client: string; queries: Record<string, string>; traces: boolean } | null; tasks: Task[] };
 
   for (const root of document.querySelectorAll<HTMLElement>('[data-explorer]')) {
     const data: Payload = JSON.parse(root.querySelector('[data-explorer-data]')!.textContent!);
@@ -224,14 +225,26 @@ const code0 = await highlightPython(sessionSource(src0.files));
     const tracer = codeTrace({ code: $('[data-code]'), player: $('[data-player]'), phases: $('[data-phases]'), methods: $('[data-ph-methods]'), resume: $('[data-resume]') });
     let traced = '';
 
+    // The dataset's host for this reader, probed once (see pickHost); with
+    // none reachable only the seeds served with the page play, marked as when
+    // there is no dataset.
+    let base = data.remote?.bases[0] ?? '';
+    let remoteDown = false;
+    const probed: Promise<void> = !data.remote ? Promise.resolve() : (() => {
+      const t0 = data.tasks.find((t) => t.id in data.remote!.queries)!, s0 = t0.sessions[0];
+      return pickHost(data.remote.bases, `viser/${t0.id}/${s0.id}_seed${s0.seeds[0]}.viser`)
+        .then((h) => { if (h) base = h; else remoteDown = true; });
+    })();
+    const offline = () => !data.remote || remoteDown;
+
     // A seed's recording: served with the page, else from the dataset.
     function rollout(t: Task, s: Session, sd: number) {
       const local = s.rollouts[sd];
-      if (local || !data.remote || !(t.id in data.remote.queries)) return local;
+      if (local || offline() || !(t.id in data.remote!.queries)) return local;
       return {
         video: null, poster: null, speed: 1,
-        viser: { client: data.remote.client, recording: `${data.remote.base}/viser/${t.id}/${s.id}_seed${sd}.viser`, query: data.remote.queries[t.id] },
-        trace: data.remote.traces ? `${data.remote.base}/trace/${t.id}/${s.id}_seed${sd}.json` : null,
+        viser: { client: data.remote!.client, recording: `${base}/viser/${t.id}/${s.id}_seed${sd}.viser`, query: data.remote!.queries[t.id] },
+        trace: data.remote!.traces ? `${base}/trace/${t.id}/${s.id}_seed${sd}.json` : null,
       };
     }
 
@@ -273,7 +286,7 @@ const code0 = await highlightPython(sessionSource(src0.files));
         const ok = session.outcomes[i] === '1';
         const rec = !!rollout(task, session, sd);
         // With the dataset every seed plays, so no seed is marked as recorded.
-        const mark = rec && !data.remote;
+        const mark = rec && offline();
         const b = document.createElement('button');
         b.type = 'button';
         b.className = `seed ${ok ? 'ok' : 'fail'}${mark ? ' rec' : ''}`;
@@ -336,6 +349,9 @@ const code0 = await highlightPython(sessionSource(src0.files));
       } else {
         if (frame) frame.hidden = true;
         if (video) { video.pause(); video.hidden = true; }
+        norec.querySelector('p')!.textContent = !remoteDown ? 'No recording for this seed yet.'
+          : "This seed's replay is hosted on Hugging Face, which your network can't reach (nor its mirror). "
+            + (Object.keys(session.rollouts).length ? 'Seeds marked with a dot play from this page.' : "None of this program's seeds are served with the page.");
         norec.hidden = false;
       }
       $('[data-seed]').textContent = `Seed ${seed}`;
@@ -394,13 +410,21 @@ const code0 = await highlightPython(sessionSource(src0.files));
     const near = new IntersectionObserver(([e]) => {
       if (!e.isIntersecting) return;
       near.disconnect();
-      whenScrollRests(() => {
+      probed.then(() => whenScrollRests(() => {
         live = true;
         const f = $('[data-player]').querySelector<HTMLIFrameElement>('iframe');
-        if (f?.dataset.viser && !f.getAttribute('src')) f.src = themed(f.dataset.viser);
-      });
+        if (f?.dataset.viser && !f.getAttribute('src') && !f.hidden) f.src = themed(f.dataset.viser);
+      }));
     }, { rootMargin: '600px' });
     near.observe($('[data-player]'));
+    probed.then(() => {
+      if (!remoteDown) return;
+      const legend = root.querySelector('.legend span:last-child');
+      if (legend) legend.innerHTML = '<i class="sw rec"></i>recorded, click to play';
+      // Open on a seed that plays, as without the dataset.
+      if (!session.rollouts[seed]) seed = firstSeed(session);
+      renderGrid(); renderSeed();
+    });
 
     $('[data-copy]').addEventListener('click', async () => {
       const text = $<HTMLElement>('[data-code]').innerText;

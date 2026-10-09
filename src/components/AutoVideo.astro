@@ -1,7 +1,10 @@
 ---
 // A muted, looping clip that loads and plays only while it is on screen and
 // pauses when it scrolls away. With reduced motion it never autoplays and
-// shows native controls instead. Width and height reserve the layout box
+// shows native controls instead. WeChat's in-app browser refuses play() until
+// its JS bridge is up (iOS) and needs the x5 attributes to stay inline
+// (Android), so there the visible clips are started again once the bridge is
+// ready and on the first tap. Width and height reserve the layout box
 // before the poster arrives.
 import { media } from '../lib/data';
 
@@ -27,6 +30,9 @@ const { src, poster, width, height, label, class: cls, eager = false, loop = tru
   aria-label={label}
   muted
   playsinline
+  webkit-playsinline
+  x5-playsinline
+  x5-video-player-type="h5-page"
   loop={loop}
   preload={eager ? 'auto' : 'none'}
   data-eager={eager ? '' : undefined}
@@ -36,20 +42,32 @@ const { src, poster, width, height, label, class: cls, eager = false, loop = tru
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
 
   function load(v: HTMLVideoElement) {
+    v.muted = true; // some WebViews honour only the property, not the attribute
     if (!v.src && v.dataset.src) v.src = v.dataset.src;
   }
 
+  const visible = new Set<HTMLVideoElement>();
   const io = new IntersectionObserver((entries) => {
     for (const e of entries) {
       const v = e.target as HTMLVideoElement;
       if (e.isIntersecting) {
+        visible.add(v);
         load(v);
         if (!reduced.matches) v.play().catch(() => {});
-      } else if (!v.paused) {
-        v.pause();
+      } else {
+        visible.delete(v);
+        if (!v.paused) v.pause();
       }
     }
   }, { threshold: 0.35 });
+
+  if (/MicroMessenger/i.test(navigator.userAgent) && !reduced.matches) {
+    const kick = () => visible.forEach((v) => { load(v); if (v.paused) v.play().catch(() => {}); });
+    const bridge = () => (window as any).WeixinJSBridge?.invoke('getNetworkType', {}, kick);
+    if ((window as any).WeixinJSBridge) bridge();
+    else document.addEventListener('WeixinJSBridgeReady', bridge, false);
+    for (const t of ['touchend', 'click']) document.addEventListener(t, kick, { once: true, passive: true });
+  }
 
   function attach(v: HTMLVideoElement) {
     if (v.dataset.bound) return;

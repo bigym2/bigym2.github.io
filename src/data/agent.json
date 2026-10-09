@@ -21,6 +21,7 @@
   "protocol_agent": "astra",
   "rollouts_remote": {
     "base": "https://huggingface.co/datasets/SWIRL-Lab/bigym2-agent-rollouts/resolve/main",
+    "mirrors": ["https://hf-mirror.com/datasets/SWIRL-Lab/bigym2-agent-rollouts/resolve/main"],
     "cameras": {
       "pick_box": { "position": [-3.248, 1.206, 1.259], "look_at": [-1.862, 2.006, 0.897] },
       "reach_target_multi_modal": { "position": [0.805, -0.473, 1.259], "look_at": [-0.58, 0.327, 0.897] },
