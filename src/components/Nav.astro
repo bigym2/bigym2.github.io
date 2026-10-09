@@ -73,4 +73,6 @@ const head = accent ? site.title.slice(0, -accent.length) : site.title;
   @media (max-width: 820px) { .sections { display: none; } .docs { margin-left: auto; } }
   /* phones: the book alone, so the title stays on one line */
   @media (max-width: 560px) { .docs span { display: none; } .docs { padding-inline: 0.6rem; } }
+  /* the narrowest phones (320 px): tighter gaps keep the theme toggle on screen */
+  @media (max-width: 360px) { .inner { gap: 1rem; } }
 </style>

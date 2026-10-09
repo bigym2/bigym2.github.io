@@ -627,7 +627,9 @@ const code0 = await highlightPython(sessionSource(src0.files));
       .matrix-t .m-cell { height: 2.5rem; font-size: 0.875rem; }
     }
     @media (max-width: 900px) {
-      .body { grid-template-columns: 1fr; }
+      /* minmax(0, ...): a plain 1fr track grows to its widest line, and a long
+         code-header note would push the player past a phone's edge. */
+      .body { grid-template-columns: minmax(0, 1fr); }
       .side { order: -1; }
       .code { flex: none; height: auto; max-height: 26rem; }
     }
