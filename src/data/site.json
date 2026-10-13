@@ -88,6 +88,11 @@
       "label": "Video",
       "url": "https://www.bilibili.com/video/BV1dCpp6DEQn",
       "kind": "bilibili"
+    },
+    {
+      "label": "WeChat",
+      "url": "https://bigym2.github.io/readme/wechat.png",
+      "kind": "wechat"
     }
   ],
   "hero": {

@@ -2,12 +2,16 @@
 // The row of project links, in the style of the Nerfies/Bulma academic
 // template (`button is-rounded is-dark`): dark pills with the official brand
 // mark of each destination. A link without a URL stays visible, dimmed, with
-// "soon" in place of the destination.
-import { siArxiv, siBilibili, siGithub, siHuggingface, siX, siYoutube } from 'simple-icons';
+// "soon" in place of the destination. WeChat has no page to open: its button
+// shows the group QR code in a popover, served from readme/wechat.png so the
+// code README links to the same file (group codes expire after 7 days, so
+// replacing that one image updates both).
+import { siArxiv, siBilibili, siGithub, siHuggingface, siWechat, siX, siYoutube } from 'simple-icons';
 import { site } from '../lib/data';
 import Icon from './Icon.astro';
 
-const brand = { arxiv: siArxiv, github: siGithub, huggingface: siHuggingface, youtube: siYoutube, bilibili: siBilibili, x: siX } as const;
+const qr = `${import.meta.env.BASE_URL.replace(/\/?$/, '/')}readme/wechat.png`;
+const brand = { arxiv: siArxiv, github: siGithub, huggingface: siHuggingface, youtube: siYoutube, bilibili: siBilibili, x: siX, wechat: siWechat } as const;
 ---
 <nav class="links" aria-label="Project links">
   {site.links.map((l) => {
@@ -15,6 +19,14 @@ const brand = { arxiv: siArxiv, github: siGithub, huggingface: siHuggingface, yo
     const icon = mark
       ? <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path d={mark.path} /></svg>
       : <Icon name={l.kind === 'pdf' ? 'paper' : l.kind === 'docs' ? 'book' : 'link'} size={16} />;
+    if (l.kind === 'wechat' && l.url) return (
+      <>
+        <button class="button" type="button" popovertarget="wechat-qr">{icon}<span>{l.label}</span></button>
+        <div id="wechat-qr" class="qr" popover>
+          <img src={qr} alt="WeChat QR code for the BiGym 2.0 discussion group" width="1031" height="1482" loading="lazy" />
+        </div>
+      </>
+    );
     return l.url ? (
       <a class="button" href={l.url} target="_blank" rel="noopener">{icon}<span>{l.label}</span></a>
     ) : (
@@ -35,8 +47,15 @@ const brand = { arxiv: siArxiv, github: siGithub, huggingface: siHuggingface, yo
     box-shadow: 0 0 0 1px oklch(1 0 0 / 0.14), 0 2px 8px -2px oklch(0 0 0 / 0.35);
     transition-property: background-color, scale; transition-duration: 160ms; transition-timing-function: var(--ease-out);
   }
-  @media (hover: hover) { a.button:hover { background: #292929; } }
-  a.button:active { scale: 0.96; }
+  button.button { border: 0; cursor: pointer; }
+  @media (hover: hover) { a.button:hover, button.button:hover { background: #292929; } }
+  a.button:active, button.button:active { scale: 0.96; }
+  .qr {
+    margin: auto; padding: 0; border: 0; border-radius: 1rem; overflow: hidden; background: #fff;
+    box-shadow: 0 0 0 1px oklch(0 0 0 / 0.08), 0 24px 60px -12px oklch(0 0 0 / 0.45);
+  }
+  .qr::backdrop { background: oklch(0 0 0 / 0.45); }
+  .qr img { display: block; width: min(22rem, 80vw); height: auto; }
   .mark { width: 1rem; height: 1rem; fill: currentColor; flex: none; }
   .button[aria-disabled] { color: oklch(1 0 0 / 0.55); background: oklch(0.25 0 0 / 0.75); cursor: default; }
   .soon { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.8; }
