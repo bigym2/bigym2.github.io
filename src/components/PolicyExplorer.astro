@@ -433,6 +433,12 @@ const code0 = await highlightPython(sessionSource(src0.files));
       catch { label.textContent = 'Press ⌘C'; }
       setTimeout(() => (label.textContent = 'Copy'), 1600);
     });
+
+    // A link can name the session to open: ?task=<task>&session=<session>.
+    const query = new URLSearchParams(location.search);
+    const linkedTask = data.tasks.find((x) => x.id === query.get('task'));
+    const linkedSession = linkedTask?.sessions.find((x) => x.id === query.get('session'));
+    if (linkedTask && linkedSession) select(linkedTask, linkedSession);
   }
 </script>
 

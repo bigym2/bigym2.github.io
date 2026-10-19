@@ -1,0 +1,47 @@
+---
+// The policy explorer alone, for other sites to frame (NAGI BENCH opens it in
+// a panel). Everything links back to the project page.
+import Base from '../../layouts/Base.astro';
+import PolicyExplorer from '../../components/PolicyExplorer.astro';
+import { asset } from '../../lib/data';
+---
+<Base embed>
+  <main class="embed">
+    <p class="embed-head wrap">
+      <a href={asset('/')} target="_blank" rel="noopener">BiGym 2.0</a>
+      <span>Every coding-agent program, every hidden seed</span>
+    </p>
+    <PolicyExplorer />
+  </main>
+</Base>
+
+<script>
+  // Framed by another site: report the page height so the frame can fit it,
+  // and follow that site's theme switch. Only NAGI BENCH may set the theme.
+  const host = /^https:\/\/(bench\.nagi\.fun|[a-z0-9-]+\.nagi-bench\.pages\.dev)$|^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+  const main = document.querySelector<HTMLElement>('main.embed');
+  if (main && window.parent !== window) {
+    const report = () => window.parent.postMessage({ type: 'bigym:height', height: Math.ceil(main.getBoundingClientRect().height) }, '*');
+    new ResizeObserver(report).observe(main);
+    report();
+    window.addEventListener('message', (e) => {
+      if (e.source !== window.parent || !host.test(e.origin)) return;
+      const theme = e.data?.type === 'bigym:theme' ? e.data.theme : null;
+      if (theme === 'dark' || theme === 'light') document.documentElement.dataset.theme = theme;
+    });
+  }
+</script>
+
+<style>
+  .embed { padding-block: 1rem 1.5rem; }
+  .embed-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.75rem;
+    margin-bottom: 1rem;
+    font-family: var(--sans);
+    color: var(--ink-2);
+  }
+  .embed-head a { font-weight: 700; color: var(--ink); }
+</style>
