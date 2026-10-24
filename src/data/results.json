@@ -31,7 +31,8 @@
           "label": "Coding agent",
           "methods": [
             "opus",
-            "astra"
+            "astra",
+            "deepseek"
           ]
         }
       ],
@@ -87,6 +88,20 @@
             "version": "0.153.4",
             "mark": "codex"
           }
+        },
+        {
+          "id": "deepseek",
+          "label": "DeepSeek V4.1 Flash",
+          "sublabel": "strict",
+          "emphasis": true,
+          "short": "DeepSeek V4.1 Flash",
+          "logo": "deepseek",
+          "series": "deepseek",
+          "harness": {
+            "name": "DeepSeek CLI (dsh)",
+            "version": "0.2.1-rc.2",
+            "mark": "dsh"
+          }
         }
       ],
       "pending": [],
@@ -134,6 +149,11 @@
               "mean": 54.0,
               "se": 22.0,
               "partial": false
+            },
+            "deepseek": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
             }
           }
         },
@@ -179,6 +199,11 @@
             "astra": {
               "mean": 89.0,
               "se": 7.0,
+              "partial": false
+            },
+            "deepseek": {
+              "mean": 4.0,
+              "se": 3.0,
               "partial": false
             }
           }
@@ -226,6 +251,11 @@
               "mean": 89.0,
               "se": 7.0,
               "partial": false
+            },
+            "deepseek": {
+              "mean": 18.0,
+              "se": 10.0,
+              "partial": false
             }
           }
         },
@@ -271,6 +301,11 @@
             "astra": {
               "mean": 99.0,
               "se": 1.0,
+              "partial": false
+            },
+            "deepseek": {
+              "mean": 96.0,
+              "se": 3.0,
               "partial": false
             }
           }
@@ -318,6 +353,11 @@
               "mean": 99.0,
               "se": 1.0,
               "partial": false
+            },
+            "deepseek": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
             }
           }
         },
@@ -363,6 +403,11 @@
             "astra": {
               "mean": 14.0,
               "se": 11.0,
+              "partial": false
+            },
+            "deepseek": {
+              "mean": 0.0,
+              "se": 0.0,
               "partial": false
             }
           }
@@ -410,6 +455,11 @@
               "mean": 16.0,
               "se": 11.0,
               "partial": false
+            },
+            "deepseek": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
             }
           }
         },
@@ -454,6 +504,11 @@
             },
             "astra": {
               "mean": 100.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "deepseek": {
+              "mean": 0.0,
               "se": 0.0,
               "partial": false
             }
@@ -502,6 +557,11 @@
               "mean": 21.0,
               "se": 4.0,
               "partial": false
+            },
+            "deepseek": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
             }
           }
         }
@@ -514,7 +574,8 @@
         "drq": 11.0,
         "deas": 41.0,
         "opus": 61.0,
-        "astra": 65.0
+        "astra": 65.0,
+        "deepseek": 13.0
       }
     },
     {

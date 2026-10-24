@@ -11,12 +11,13 @@
 // rest (the accent is too close to Astra's blue); the weight carries it where
 // colour cannot.
 import { results } from '../lib/data';
-import { siClaudecode } from 'simple-icons';
+import { siClaudecode, siDeepseek } from 'simple-icons';
 import { claude, codex, openai } from '../lib/protocolMarks';
 
 const marks = {
   claude: { d: claude, box: '0 0 24 24', fill: '#D97757' },
   openai: { d: openai, box: '0 0 90 90', fill: 'currentColor' },
+  deepseek: { d: siDeepseek.path, box: '0 0 24 24', fill: `#${siDeepseek.hex}` },
 } as const;
 // Harness marks for the hover card over a coding agent's header, in colour:
 // Claude Code's pixel mark in its brand coral (simple-icons), Codex in a
@@ -24,6 +25,7 @@ const marks = {
 const harnessMarks = {
   'claude-code': { d: siClaudecode.path, box: '0 0 24 24', fill: `#${siClaudecode.hex}` },
   codex: { d: codex, box: '0 0 90 90', fill: 'url(#codex-grad)' },
+  dsh: { d: siDeepseek.path, box: '0 0 24 24', fill: `#${siDeepseek.hex}` },
 } as const;
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 const best = (vals: (number | null)[]) => Math.max(...vals.filter((v): v is number => v !== null));
@@ -38,7 +40,7 @@ const span = (text: string, se: boolean) => `--n: ${text.length}${se ? '' : '; -
 const tint = (series?: string) => (series ? `--hl: var(--series-${series})` : undefined);
 // Phones show every column at once, so headers there take their shortest
 // form: the agents by model name alone, the groups by their initials.
-const tinyMethod: Record<string, string> = { opus: 'Opus', astra: 'Astra' };
+const tinyMethod: Record<string, string> = { opus: 'Opus', astra: 'Astra', deepseek: 'DeepSeek' };
 const tinyGroup: Record<string, string> = { 'Imitation learning': 'IL', 'Demo-driven RL': 'RL', 'Coding agent': 'Agent' };
 ---
 <div class="results page">

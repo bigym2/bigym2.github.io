@@ -90,10 +90,10 @@ const generation = z.object({
     sublabel: z.string().optional(),
     emphasis: z.boolean().optional(),
     short: z.string().optional(),                  // header text when the label is long
-    logo: z.enum(['claude', 'openai']).optional(), // mark shown above the header
-    series: z.enum(['opus', 'astra', 'sol']).optional(), // bar colour, as in the compute chart
+    logo: z.enum(['claude', 'openai', 'deepseek']).optional(), // mark shown above the header
+    series: z.enum(['opus', 'astra', 'sol', 'deepseek']).optional(), // bar colour, as in the compute chart
     // The coding agent's harness, shown on hover over its header.
-    harness: z.object({ name: z.string(), version: z.string(), mark: z.enum(['claude-code', 'codex']) }).optional(),
+    harness: z.object({ name: z.string(), version: z.string(), mark: z.enum(['claude-code', 'codex', 'dsh']) }).optional(),
   })),
   pending: z.array(z.string()).default([]),
   rows: z.array(z.object({ task: z.string(), label: z.string(), values: z.record(z.string(), cell.nullable()) })),
