@@ -1,0 +1,32 @@
+---
+// The leaderboard on a page of its own, so a post can link straight to the
+// ranking. Every number comes from the same data as the project page
+// (compute.json, results.json); adding an agent there updates both pages.
+import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
+import Section from '../components/Section.astro';
+import ComputeSection from '../components/ComputeSection.astro';
+import ResultsTable from '../components/ResultsTable.astro';
+import Footer from '../components/Footer.astro';
+import { compute, results } from '../lib/data';
+
+const tasks = compute.rows.length;
+const sections = [
+  { id: 'agents', label: 'Coding agents' },
+  { id: 'methods', label: 'All methods' },
+];
+---
+<Base title="Leaderboard">
+  <Nav sections={sections} home />
+  <main>
+    <Section id="agents" title="Coding agents">
+      <Fragment slot="lede">Each agent writes the controller for a whole-body humanoid from one demonstration video, with the same <span class="key">{compute.budget_steps.toLocaleString('en')} environment steps</span> per session. Mean success over {tasks} tasks × {compute.sessions_per_task} independent sessions, 100 hidden episodes per final program.</Fragment>
+      <ComputeSection quote={false} />
+    </Section>
+    <Section id="methods" title="Learned policies and coding agents" band>
+      <Fragment slot="lede">Success rate on the same {results.generations[0].rows.length} tasks and hidden seeds, 100 evaluation episodes per checkpoint or program.</Fragment>
+      <ResultsTable />
+    </Section>
+  </main>
+  <Footer />
+</Base>

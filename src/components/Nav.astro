@@ -4,9 +4,12 @@ import { site } from '../lib/data';
 import ThemeToggle from './ThemeToggle.astro';
 import Logo from './Logo.astro';
 import Icon from './Icon.astro';
+import { asset } from '../lib/data';
 
-interface Props { sections: { id: string; label: string }[] }
-const { sections } = Astro.props;
+// On a sub-page (`home`), the brand goes back to the project page and the
+// Leaderboard link is the current page.
+interface Props { sections: { id: string; label: string }[]; home?: boolean }
+const { sections, home = false } = Astro.props;
 const code = site.links.find((l) => l.kind === 'github' && l.url);
 const docs = site.links.find((l) => l.kind === 'docs' && l.url);
 const accent = site.titleAccent && site.title.endsWith(site.titleAccent) ? site.titleAccent : null;
@@ -14,13 +17,14 @@ const head = accent ? site.title.slice(0, -accent.length) : site.title;
 ---
 <nav class="nav" aria-label="Sections">
   <div class="inner wrap">
-    <a class="brand" href="#top">
+    <a class="brand" href={home ? asset('/') : '#top'}>
       <Logo />
       <span>{head}{accent && <span class="accent">{accent}</span>}</span>
     </a>
     <ul class="sections">
       {sections.map((s) => <li><a href={`#${s.id}`}>{s.label}</a></li>)}
     </ul>
+    <a class="board" href={asset('/leaderboard/')} aria-current={home ? 'page' : undefined}>Leaderboard</a>
     {docs && (
       <a class="docs" href={docs.url} aria-label="Docs">
         <Icon name="book" size={16} />
@@ -55,6 +59,13 @@ const head = accent ? site.title.slice(0, -accent.length) : site.title;
     transition-property: background-color, color; transition-duration: 140ms;
   }
   @media (hover: hover) { .sections a:hover { color: var(--ink); background: var(--paper-2); } }
+  /* Leaderboard stays in the bar on phones too: posts link to it. */
+  .board {
+    display: inline-flex; align-items: center; height: 2.25rem; padding-inline: 0.75rem; margin-right: -1rem; border-radius: var(--r-md);
+    font-family: var(--sans); font-size: 0.9375rem; font-weight: 600; color: var(--ink); text-decoration: none; white-space: nowrap;
+  }
+  .board[aria-current='page'] { background: var(--paper-2); }
+  @media (hover: hover) { .board:hover { background: var(--paper-2); } }
   .docs {
     display: inline-flex; align-items: center; gap: 0.4rem; height: 2.25rem; padding-inline: 0.75rem; margin-right: -1rem; border-radius: var(--r-md);
     font-family: var(--sans); font-size: 0.9375rem; font-weight: 500; color: var(--ink); text-decoration: none;
@@ -70,9 +81,9 @@ const head = accent ? site.title.slice(0, -accent.length) : site.title;
   .code svg { width: 1rem; height: 1rem; fill: currentColor; }
   @media (hover: hover) { .code:hover { background: #292929; } }
   .code:active { scale: 0.96; }
-  @media (max-width: 820px) { .sections { display: none; } .docs { margin-left: auto; } }
+  @media (max-width: 820px) { .sections { display: none; } .board { margin-left: auto; } }
   /* phones: the book alone, so the title stays on one line */
-  @media (max-width: 560px) { .docs span { display: none; } .docs { padding-inline: 0.6rem; } }
+  @media (max-width: 560px) { .docs span { display: none; } .docs { padding-inline: 0.6rem; } .board { padding-inline: 0.5rem; } }
   /* the narrowest phones (320 px): tighter gaps keep the theme toggle on screen */
   @media (max-width: 360px) { .inner { gap: 1rem; } }
 </style>

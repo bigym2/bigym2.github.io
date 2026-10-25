@@ -7,6 +7,10 @@
 // Without JavaScript the table below still carries every number.
 import { compute } from '../lib/data';
 
+// The leaderboard page leaves the opening quote out.
+interface Props { quote?: boolean }
+const { quote = true } = Astro.props;
+
 const n = compute.sessions_per_task;
 const cells = compute.rows.length * n;
 const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
@@ -33,12 +37,12 @@ const rows = compute.rows.map((r) => ({ ...r, pts: compute.agents.map((ag) => ({
 const aggs = compute.agents.map((ag) => ({ ag, t: compute.totals[ag.id] }));
 ---
 <div class="compute">
-  <figure class="quote measure">
+  {quote && <figure class="quote measure">
     <blockquote cite={compute.quote.url}><p>“{compute.quote.text}”</p></blockquote>
     <figcaption>
       {compute.quote.author}, <a href={compute.quote.url} target="_blank" rel="noopener"><cite>{compute.quote.title}</cite></a>, {compute.quote.date}
     </figcaption>
-  </figure>
+  </figure>}
 
   <figure class="plot page" data-compute={JSON.stringify({ sessions_per_task: compute.sessions_per_task, agents: compute.agents, rows: compute.rows, totals: compute.totals })}>
     <figcaption class="head">

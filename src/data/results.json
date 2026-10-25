@@ -92,10 +92,10 @@
         },
         {
           "id": "deepseek",
-          "label": "DeepSeek V4.1 Flash",
+          "label": "DeepSeek V4.1 Flash (1017)",
           "sublabel": "strict",
           "emphasis": true,
-          "short": "DeepSeek V4.1 Flash",
+          "short": "DeepSeek V4.1 Flash (1017)",
           "logo": "deepseek",
           "series": "deepseek",
           "harness": {

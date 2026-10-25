@@ -14,7 +14,7 @@
     { "id": "astra", "model": "GPT-6 Astra", "short": "GPT-6 Astra", "harness": "Codex", "effort": "high" },
     { "id": "sol", "model": "GPT-6 Sol", "short": "GPT-6 Sol", "harness": "Codex", "effort": "high" },
     { "id": "sol61", "model": "GPT-6.1 Sol", "short": "GPT-6.1 Sol", "harness": "Codex", "effort": "high" },
-    { "id": "deepseek", "model": "DeepSeek V4.1 Flash", "short": "DeepSeek V4.1 Flash", "harness": "dsh", "effort": "max" },
+    { "id": "deepseek", "model": "DeepSeek V4.1 Flash (1017)", "short": "DeepSeek V4.1 Flash (1017)", "harness": "dsh", "effort": "max" },
     { "id": "kimi", "model": "Kimi K3.1 Pro", "short": "Kimi K3.1 Pro", "harness": "Claude Code", "effort": "max" }
   ],
   "rows": [

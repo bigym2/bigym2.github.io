@@ -4,10 +4,11 @@ import { site, asset } from '../lib/data';
 
 // `embed` serves a bare page meant to sit in another site's frame: kept out of
 // search, canonical to the project page, theme taken from `?theme=`.
-interface Props { embed?: boolean }
-const { embed = false } = Astro.props;
+// `title` names a sub-page; the tab and the social card then read "<title> · <site>".
+interface Props { embed?: boolean; title?: string }
+const { embed = false, title } = Astro.props;
 
-const pageTitle = `${site.title}: ${site.subtitle}`;
+const pageTitle = title ? `${title} · ${site.title}` : `${site.title}: ${site.subtitle}`;
 const canonical = Astro.site ? new URL(embed ? asset('/') : Astro.url.pathname, Astro.site).href : undefined;
 // Social card (public/og.png, 1200×630). Needs SITE_URL at build time: crawlers want an absolute URL.
 const ogImage = Astro.site ? new URL(asset('/og.png'), Astro.site).href : undefined;
