@@ -11,21 +11,21 @@ const n = compute.sessions_per_task;
 const cells = compute.rows.length * n;
 const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 const fmt1 = (v: number) => v.toFixed(1);
-const fmtTok = (m: number) => (m >= 1000 ? `${fmt1(m / 1000)}B` : `${Math.round(m)}M`);
+const fmtTok = (k: number) => (k >= 1000 ? `${fmt1(k / 1000)}M` : `${Math.round(k)}k`);
 
 // The legend doubles as the scoreboard: per agent, its mean success over
-// every session, and the API-equivalent cost and input tokens of one task
+// every session, and the API-equivalent cost and output tokens of one task
 // (one session develops one task's program; the mean over every session), each with
 // a thin bar against the largest, so a same-budget, different-bill reading
 // needs no arithmetic.
-const maxOf = (k: 'mean' | 'usd' | 'tokens_m') => Math.max(...compute.agents.map((ag) => compute.totals[ag.id][k] / cells));
+const maxOf = (k: 'mean' | 'usd' | 'out_k') => Math.max(...compute.agents.map((ag) => compute.totals[ag.id][k] / cells));
 // Ranked by mean success, highest first.
 const board = [...compute.agents].sort((a, b) => compute.totals[b.id].mean - compute.totals[a.id].mean).map((ag) => {
   const t = compute.totals[ag.id];
   return { ag, cells: [
     { v: `${fmt1(t.mean)}%`, f: t.mean / 100 },
     { v: `$${fmt1(t.usd / cells)}`, f: t.usd / cells / maxOf('usd') },
-    { v: `${fmt1(t.tokens_m / cells)}M`, f: t.tokens_m / cells / maxOf('tokens_m') },
+    { v: fmtTok(t.out_k / cells), f: t.out_k / cells / maxOf('out_k') },
   ] };
 });
 
@@ -50,7 +50,7 @@ const aggs = compute.agents.map((ag) => ({ ag, t: compute.totals[ag.id] }));
           <span role="columnheader">Agent</span>
           <span role="columnheader">Success</span>
           <span role="columnheader">Cost per task</span>
-          <span role="columnheader">Input tokens per task</span>
+          <span role="columnheader">Output tokens per task</span>
         </div>
         {board.map((b) => (
           <div class="brow" role="row" style={`--c:var(--series-${b.ag.id})`}>
@@ -70,7 +70,7 @@ const aggs = compute.agents.map((ag) => ({ ag, t: compute.totals[ag.id] }));
       </div>
       <div class="seg" role="group" aria-label="Horizontal axis">
         <button type="button" data-axis="usd" aria-pressed="true">Cost</button>
-        <button type="button" data-axis="tok" aria-pressed="false">Input tokens</button>
+        <button type="button" data-axis="tok" aria-pressed="false">Output tokens</button>
       </div>
     </div>
 
@@ -96,7 +96,7 @@ const aggs = compute.agents.map((ag) => ({ ag, t: compute.totals[ag.id] }));
 
   <details class="numbers page">
     <summary>All {cells * compute.agents.length} sessions</summary>
-    <p class="cap" id="compute-cap">Success of each session and their mean (%), then API-equivalent cost ($) and input tokens per session. Last row: mean over all sessions, total cost and total tokens.</p>
+    <p class="cap" id="compute-cap">Success of each session and their mean (%), then API-equivalent cost ($) and output tokens per session (reasoning included). Last row: mean over all sessions, total cost and total output tokens.</p>
     <div class="tscroll" style={`--agents:${compute.agents.length}`} tabindex="0" role="region" aria-label="Per-task numbers, scrollable" aria-describedby="compute-cap">
       <table>
         <thead>
@@ -117,7 +117,7 @@ const aggs = compute.agents.map((ag) => ({ ag, t: compute.totals[ag.id] }));
                   <td class="sessions">{p.c.sessions.join('\u2009/\u2009')}</td>
                   <td class="num"><b>{Math.round(p.m)}</b></td>
                   <td class="num">{fmt1(p.c.usd)}</td>
-                  <td class="num">{p.c.tokens_m}M</td>
+                  <td class="num">{p.c.out_k}k</td>
                 </>
               ))}
             </tr>
@@ -131,7 +131,7 @@ const aggs = compute.agents.map((ag) => ({ ag, t: compute.totals[ag.id] }));
                 <td class="sessions">{cells} sessions</td>
                 <td class="num"><b>{fmt1(a.t.mean)}</b></td>
                 <td class="num">{a.t.usd}</td>
-                <td class="num">{fmtTok(a.t.tokens_m)}</td>
+                <td class="num">{fmtTok(a.t.out_k)}</td>
               </>
             ))}
           </tr>

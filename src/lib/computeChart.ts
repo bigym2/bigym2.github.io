@@ -3,13 +3,13 @@
 // grid of one small panel per task. Both redraw on resize at the real pixel size, so text
 // never scales. ComputeSection renders the controls and passes the data.
 
-type Usage = { sessions: number[]; usd: number; tokens_m: number };
+type Usage = { sessions: number[]; usd: number; out_k: number };
 type Agent = { id: string; model: string; short: string; harness: string; effort: string };
 export type ComputeData = {
   sessions_per_task: number;
   agents: Agent[];
   rows: { task: string; label: string; values: Record<string, Usage> }[];
-  totals: Record<string, { mean: number; usd: number; tokens_m: number }>;
+  totals: Record<string, { mean: number; usd: number; out_k: number }>;
 };
 type Axis = 'usd' | 'tok';
 type Point = { usd: number; tok: number; m: number; sessions?: number[] };
@@ -17,10 +17,11 @@ type Row = { label: string; pts: Record<string, Point> };
 
 const AX = {
   usd: { lo: 0.24, hi: 36, ticks: [0.5, 1, 2, 5, 10, 20], f: (v: number) => `$${v}`, title: 'API-equivalent cost per task ($, log scale)', unit: 'cost' },
-  tok: { lo: 0.45, hi: 90, ticks: [1, 2, 5, 10, 20, 50], f: (v: number) => `${v}M`, title: 'Input tokens per task (M, log scale)', unit: 'input tokens' },
+  tok: { lo: 3, hi: 500, ticks: [5, 10, 20, 50, 100, 200], f: (v: number) => `${v}k`, title: 'Output tokens per task (thousands, reasoning included, log scale)', unit: 'output tokens' },
 };
 const NS = 'http://www.w3.org/2000/svg';
 const fmt1 = (v: number) => v.toFixed(1);
+const fmtK = (k: number) => (k >= 1000 ? `${fmt1(k / 1000)}M` : `${Math.round(k)}k`);
 const mean = (a: number[]) => a.reduce((x, y) => x + y, 0) / a.length;
 
 function el(tag: string, attrs: Record<string, string | number>, parent?: Element) {
@@ -37,14 +38,14 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
     label: r.label,
     pts: Object.fromEntries(agents.map((a) => {
       const c = r.values[a.id];
-      return [a.id, { usd: c.usd, tok: c.tokens_m, m: mean(c.sessions), sessions: c.sessions }];
+      return [a.id, { usd: c.usd, tok: c.out_k, m: mean(c.sessions), sessions: c.sessions }];
     })),
   }));
   const all: Row = {
     label: `All ${rows.length} tasks`,
     pts: Object.fromEntries(agents.map((a) => {
       const t = data.totals[a.id];
-      return [a.id, { usd: t.usd / cells, tok: t.tokens_m / cells, m: t.mean }];
+      return [a.id, { usd: t.usd / cells, tok: t.out_k / cells, m: t.mean }];
     })),
   };
 
@@ -65,9 +66,9 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
   const ratio = (row: Row, narrow: boolean) => { const s = spread(row), n = narrow ? tiny : (a: Agent) => a.short; return `${s.r} ${AX[axis].unit}: ${n(s.hi)} vs ${n(s.lo)}`; };
   const tip = (row: Row, a: Agent) => {
     const p = row.pts[a.id];
-    if (p.sessions) return `${row.label} · ${name(a)}\nSessions ${p.sessions.join(' / ')} → ${Math.round(p.m)}%\n$${fmt1(p.usd)} · ${Math.round(p.tok)}M input tokens per session`;
+    if (p.sessions) return `${row.label} · ${name(a)}\nSessions ${p.sessions.join(' / ')} → ${Math.round(p.m)}%\n$${fmt1(p.usd)} · ${Math.round(p.tok)}k output tokens per session`;
     const t = data.totals[a.id];
-    return `${row.label} · ${name(a)}\n${fmt1(p.m)}% over ${cells} sessions\n$${t.usd} · ${Math.round(t.tokens_m)}M input tokens in total`;
+    return `${row.label} · ${name(a)}\n${fmt1(p.m)}% over ${cells} sessions\n$${t.usd} · ${fmtK(t.out_k)} output tokens in total`;
   };
 
   function scale(w: number, h: number, m: { l: number; r: number; t: number; b: number }) {

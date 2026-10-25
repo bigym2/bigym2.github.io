@@ -191,12 +191,12 @@ export const agent = z.object({
 
 // Coding agents against inference compute. Each cell: the success (%) of each
 // development session's frozen program on 100 hidden seeds, and the
-// per-session mean API-equivalent cost and input tokens (cache included). Totals are stated as
+// per-session mean API-equivalent cost and output tokens (reasoning included, in thousands). Totals are stated as
 // reported and checked against the cells, allowing for their rounding.
 const usage = z.object({
   sessions: z.array(z.number().int().min(0).max(100)).min(1),
   usd: z.number().positive(),
-  tokens_m: z.number().positive(),
+  out_k: z.number().positive(),
 });
 
 export const compute = z.object({
@@ -206,7 +206,7 @@ export const compute = z.object({
   footnote: z.string().nullable(),
   agents: z.array(z.object({ id: z.string(), model: z.string(), short: z.string(), harness: z.string(), effort: z.string() })).min(2),
   rows: z.array(z.object({ task: z.string(), label: z.string(), values: z.record(z.string(), usage) })).min(1),
-  totals: z.record(z.string(), z.object({ mean: z.number(), usd: z.number(), tokens_m: z.number() })),
+  totals: z.record(z.string(), z.object({ mean: z.number(), usd: z.number(), out_k: z.number() })),
 }).superRefine((d, ctx) => {
   const n = d.sessions_per_task;
   d.agents.forEach(({ id }) => {
@@ -221,11 +221,11 @@ export const compute = z.object({
     const all = cells.flatMap((c) => c.sessions);
     const mean = all.reduce((a, b) => a + b, 0) / all.length;
     if (Math.abs(mean - t.mean) > 0.05) ctx.addIssue({ code: 'custom', path: ['totals', id, 'mean'], message: `${t.mean} disagrees with the sessions (${mean.toFixed(2)})` });
-    // Per-cell values are rounded to 0.1 $ and 1 M tokens.
-    const sum = (k: 'usd' | 'tokens_m') => n * cells.reduce((a, c) => a + c[k], 0);
+    // Per-cell values are rounded to 0.1 $ and 1 k tokens.
+    const sum = (k: 'usd' | 'out_k') => n * cells.reduce((a, c) => a + c[k], 0);
     const slack = (step: number) => (step / 2) * n * cells.length + 0.5;
     if (Math.abs(sum('usd') - t.usd) > slack(0.1)) ctx.addIssue({ code: 'custom', path: ['totals', id, 'usd'], message: `${t.usd} disagrees with the cells (${sum('usd').toFixed(1)})` });
-    if (Math.abs(sum('tokens_m') - t.tokens_m) > slack(1)) ctx.addIssue({ code: 'custom', path: ['totals', id, 'tokens_m'], message: `${t.tokens_m} disagrees with the cells (${sum('tokens_m')})` });
+    if (Math.abs(sum('out_k') - t.out_k) > slack(1)) ctx.addIssue({ code: 'custom', path: ['totals', id, 'out_k'], message: `${t.out_k} disagrees with the cells (${sum('out_k')})` });
   });
 });
 
