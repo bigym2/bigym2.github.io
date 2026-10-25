@@ -23,7 +23,9 @@
   --bar: oklch(0.72 0.012 var(--hue));
   /* Agent chart, in the colours the agent figures use elsewhere: Astra
      blue (#4A8CF7), Opus peach (#F2B08F), Sol gold (#D9A149) and, for
-     GPT-6.1 Sol, the paper's Okabe-Ito green (#009E73). Dark mode takes
+     GPT-6.1 Sol, the paper's Okabe-Ito green (#009E73); DeepSeek and Kimi
+     take their logo colours, DeepSeek blue (#5786FE) and Kimi black (white
+     on dark paper). Dark mode takes
      them as they are, with the green lifted to read on dark paper; on paper
      blue and peach keep their hue and the peach drops in lightness so it
      stays visible. Gold and peach sit close (OKLab ΔE about 10), so every
@@ -32,7 +34,8 @@
   --series-opus: oklch(0.66 0.12 48);
   --series-sol: #d9a149;
   --series-sol61: #009e73;
-  --series-deepseek: oklch(0.52 0.2 295);
+  --series-deepseek: #5786fe;
+  --series-kimi: #000000;
   --media-edge: oklch(0 0 0 / 0.08);
   --plate: transparent;
   --shadow-lift: 0 1px 2px oklch(0 0 0 / 0.05), 0 8px 24px -12px oklch(0 0 0 / 0.18);
@@ -73,7 +76,8 @@
   --series-opus: #f2b08f;
   --series-sol: #d9a149;
   --series-sol61: oklch(0.72 0.13 165);
-  --series-deepseek: #b39dff;
+  --series-deepseek: #5786fe;
+  --series-kimi: #ffffff;
   --media-edge: oklch(1 0 0 / 0.08);
   /* Official logo colours stay untouched; in dark mode they sit on a paper plate. */
   --plate: oklch(0.97 0.003 var(--hue));

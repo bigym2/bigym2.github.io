@@ -4,7 +4,7 @@
       "id": "single",
       "label": "Single light",
       "caption": "Success rate (%) on nine representative tasks, in the current scene lit by one light that follows the robot. The best result in each row is bold.",
-      "footnote": "ACT, DP, CQN-AS, DrQ-v2+ and DEAS: mean ± SE across three training runs, each averaging its last five checkpoints at 100 episodes. π0.5: one training run per task, pooled over its last five checkpoints at 50 episodes, so no SE. Coding agents: three independent development sessions each under the strict interface (84×84 onboard views, direct joint actions, no kinematics tools), 100 episodes per frozen program, mean ± SE across sessions.",
+      "footnote": "ACT, DP, CQN-AS, DrQ-v2+ and DEAS: mean ± SE across three training runs, each averaging its last five checkpoints at 100 episodes. π0.5: one training run per task, pooled over its last five checkpoints at 50 episodes, so no SE. Coding agents: three independent development sessions each under the strict interface (84×84 onboard views, direct joint actions, no kinematics tools), 100 episodes per frozen program, mean ± SE across sessions. Kimi K3.1 Pro (kimi-1021-preview, max effort) runs in Claude Code against Moonshot's endpoint; four of its 27 sessions failed on API timeouts before submitting and were rerun.",
       "groups": [
         {
           "label": "VLA",
@@ -32,7 +32,8 @@
           "methods": [
             "opus",
             "astra",
-            "deepseek"
+            "deepseek",
+            "kimi"
           ]
         }
       ],
@@ -102,6 +103,20 @@
             "version": "0.2.1-rc.2",
             "mark": "dsh"
           }
+        },
+        {
+          "id": "kimi",
+          "label": "Kimi K3.1 Pro",
+          "sublabel": "strict",
+          "emphasis": true,
+          "short": "Kimi K3.1 Pro",
+          "logo": "kimi",
+          "series": "kimi",
+          "harness": {
+            "name": "Claude Code",
+            "version": "2.1.280",
+            "mark": "claude-code"
+          }
         }
       ],
       "pending": [],
@@ -151,6 +166,11 @@
               "partial": false
             },
             "deepseek": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "kimi": {
               "mean": 0.0,
               "se": 0.0,
               "partial": false
@@ -205,6 +225,11 @@
               "mean": 4.0,
               "se": 3.0,
               "partial": false
+            },
+            "kimi": {
+              "mean": 82.0,
+              "se": 12.0,
+              "partial": false
             }
           }
         },
@@ -255,6 +280,11 @@
             "deepseek": {
               "mean": 18.0,
               "se": 10.0,
+              "partial": false
+            },
+            "kimi": {
+              "mean": 18.0,
+              "se": 15.0,
               "partial": false
             }
           }
@@ -307,6 +337,11 @@
               "mean": 96.0,
               "se": 3.0,
               "partial": false
+            },
+            "kimi": {
+              "mean": 56.0,
+              "se": 23.0,
+              "partial": false
             }
           }
         },
@@ -358,6 +393,11 @@
               "mean": 0.0,
               "se": 0.0,
               "partial": false
+            },
+            "kimi": {
+              "mean": 33.0,
+              "se": 26.0,
+              "partial": false
             }
           }
         },
@@ -406,6 +446,11 @@
               "partial": false
             },
             "deepseek": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "kimi": {
               "mean": 0.0,
               "se": 0.0,
               "partial": false
@@ -460,6 +505,11 @@
               "mean": 0.0,
               "se": 0.0,
               "partial": false
+            },
+            "kimi": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
             }
           }
         },
@@ -508,6 +558,11 @@
               "partial": false
             },
             "deepseek": {
+              "mean": 0.0,
+              "se": 0.0,
+              "partial": false
+            },
+            "kimi": {
               "mean": 0.0,
               "se": 0.0,
               "partial": false
@@ -562,6 +617,11 @@
               "mean": 0.0,
               "se": 0.0,
               "partial": false
+            },
+            "kimi": {
+              "mean": 1.0,
+              "se": 1.0,
+              "partial": false
             }
           }
         }
@@ -575,7 +635,8 @@
         "deas": 41.0,
         "opus": 61.0,
         "astra": 65.0,
-        "deepseek": 13.0
+        "deepseek": 13.0,
+        "kimi": 21.0
       }
     },
     {
