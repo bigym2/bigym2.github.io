@@ -8,12 +8,13 @@
     "url": "https://x.com/polynoamial/status/2064210146558136827",
     "date": "June 2026"
   },
-  "footnote": "Harnesses: Claude Code 2.1.280; Codex CLI 0.153.4 for GPT-6 Astra, 0.157.1 for GPT-6 Sol and 0.160.0 for GPT-6.1 Sol, each newer model being served only to a newer client; DeepSeek's own CLI (dsh 0.2.1-rc.2) for DeepSeek V4.1 Flash (V4.1-Flash-1017, max effort), priced at DeepSeek's peak rate, twice its off-peak rate; Claude Code 2.1.280 against Moonshot's endpoint for Kimi K3.1 Pro (kimi-1021-preview, max effort), priced at Kimi K3.1 Pro's list rate, rerun sessions in place of the four that timed out. Output tokens are everything the model generated, reasoning included; every harness reports them per request.",
+  "footnote": "Harnesses: Claude Code 2.1.280; Codex CLI 0.153.4 for GPT-6 Astra, 0.157.1 for GPT-6 Sol, 0.160.0 for GPT-6.1 Sol and 0.164.0 for GPT-6.1 Terra, each newer model being served only to a newer client; DeepSeek's own CLI (dsh 0.2.1-rc.2) for DeepSeek V4.1 Flash (V4.1-Flash-1017, max effort), priced at DeepSeek's peak rate, twice its off-peak rate; Claude Code 2.1.280 against Moonshot's endpoint for Kimi K3.1 Pro (kimi-1021-preview, max effort), priced at Kimi K3.1 Pro's list rate, rerun sessions in place of the four that timed out. Output tokens are everything the model generated, reasoning included; every harness reports them per request.",
   "agents": [
     { "id": "opus", "model": "Claude Opus 5.5", "short": "Claude Opus 5.5", "harness": "Claude Code", "effort": "high" },
     { "id": "astra", "model": "GPT-6 Astra", "short": "GPT-6 Astra", "harness": "Codex", "effort": "high" },
     { "id": "sol", "model": "GPT-6 Sol", "short": "GPT-6 Sol", "harness": "Codex", "effort": "high" },
     { "id": "sol61", "model": "GPT-6.1 Sol", "short": "GPT-6.1 Sol", "harness": "Codex", "effort": "high" },
+    { "id": "terra", "model": "GPT-6.1 Terra", "short": "GPT-6.1 Terra", "harness": "Codex", "effort": "high" },
     { "id": "deepseek", "model": "DeepSeek V4.1 Flash (1017)", "short": "DeepSeek V4.1 Flash (1017)", "harness": "dsh", "effort": "max" },
     { "id": "kimi", "model": "Kimi K3.1 Pro", "short": "Kimi K3.1 Pro", "harness": "Claude Code", "effort": "max" }
   ],
@@ -23,6 +24,7 @@
       "astra": { "sessions": [100, 100, 100], "usd": 11.7, "out_k": 28 },
       "sol":   { "sessions": [0, 0, 0], "usd": 6.9, "out_k": 88 },
       "sol61": { "sessions": [0, 0, 0], "usd": 2.5, "out_k": 78 },
+      "terra": { "sessions": [0, 0, 0], "usd": 0.9, "out_k": 31 },
       "deepseek": { "sessions": [0, 0, 0], "usd": 0.7, "out_k": 265 },
       "kimi": { "sessions": [0, 0, 0], "usd": 16.3, "out_k": 149 } } },
     { "task": "dishwasher_load_cups", "label": "Dishwasher load cups", "values": {
@@ -30,6 +32,7 @@
       "astra": { "sessions": [18, 16, 30], "usd": 24.4, "out_k": 68 },
       "sol":   { "sessions": [2, 0, 3], "usd": 10.1, "out_k": 93 },
       "sol61": { "sessions": [36, 2, 15], "usd": 2.1, "out_k": 62 },
+      "terra": { "sessions": [0, 0, 36], "usd": 0.7, "out_k": 21 },
       "deepseek": { "sessions": [0, 0, 0], "usd": 0.9, "out_k": 321 },
       "kimi": { "sessions": [4, 0, 0], "usd": 17.3, "out_k": 163 } } },
     { "task": "drawer_top_close", "label": "Drawer close", "values": {
@@ -37,6 +40,7 @@
       "astra": { "sessions": [96, 100, 100], "usd": 1.6, "out_k": 5 },
       "sol":   { "sessions": [98, 100, 100], "usd": 1.2, "out_k": 22 },
       "sol61": { "sessions": [100, 100, 100], "usd": 0.3, "out_k": 7 },
+      "terra": { "sessions": [70, 88, 81], "usd": 0.3, "out_k": 9 },
       "deepseek": { "sessions": [99, 91, 99], "usd": 0.4, "out_k": 180 },
       "kimi": { "sessions": [100, 22, 47], "usd": 2.8, "out_k": 56 } } },
     { "task": "drawer_top_open", "label": "Drawer open", "values": {
@@ -44,6 +48,7 @@
       "astra": { "sessions": [100, 97, 100], "usd": 6.6, "out_k": 22 },
       "sol":   { "sessions": [55, 66, 36], "usd": 4.7, "out_k": 57 },
       "sol61": { "sessions": [40, 100, 34], "usd": 0.9, "out_k": 24 },
+      "terra": { "sessions": [100, 0, 27], "usd": 0.6, "out_k": 21 },
       "deepseek": { "sessions": [0, 0, 0], "usd": 0.6, "out_k": 258 },
       "kimi": { "sessions": [0, 84, 16], "usd": 14.4, "out_k": 147 } } },
     { "task": "move_plate", "label": "Move plate", "values": {
@@ -51,6 +56,7 @@
       "astra": { "sessions": [36, 2, 4], "usd": 18.8, "out_k": 61 },
       "sol":   { "sessions": [1, 7, 5], "usd": 4.2, "out_k": 56 },
       "sol61": { "sessions": [7, 0, 17], "usd": 0.9, "out_k": 31 },
+      "terra": { "sessions": [3, 0, 1], "usd": 0.6, "out_k": 24 },
       "deepseek": { "sessions": [0, 0, 0], "usd": 0.9, "out_k": 292 },
       "kimi": { "sessions": [0, 0, 0], "usd": 9.8, "out_k": 115 } } },
     { "task": "move_two_plates", "label": "Move two plates", "values": {
@@ -58,6 +64,7 @@
       "astra": { "sessions": [0, 38, 9], "usd": 12.3, "out_k": 45 },
       "sol":   { "sessions": [0, 0, 0], "usd": 6.2, "out_k": 65 },
       "sol61": { "sessions": [0, 8, 0], "usd": 2.0, "out_k": 63 },
+      "terra": { "sessions": [0, 0, 5], "usd": 0.9, "out_k": 26 },
       "deepseek": { "sessions": [0, 0, 0], "usd": 0.7, "out_k": 236 },
       "kimi": { "sessions": [0, 0, 0], "usd": 17.1, "out_k": 128 } } },
     { "task": "pick_box", "label": "Pick box", "values": {
@@ -65,6 +72,7 @@
       "astra": { "sessions": [64, 85, 12], "usd": 12.5, "out_k": 34 },
       "sol":   { "sessions": [0, 0, 0], "usd": 5.9, "out_k": 73 },
       "sol61": { "sessions": [0, 52, 0], "usd": 1.5, "out_k": 40 },
+      "terra": { "sessions": [3, 8, 0], "usd": 0.9, "out_k": 25 },
       "deepseek": { "sessions": [0, 0, 0], "usd": 0.5, "out_k": 204 },
       "kimi": { "sessions": [0, 0, 0], "usd": 12.9, "out_k": 138 } } },
     { "task": "reach_target_dual", "label": "Reach dual", "values": {
@@ -72,6 +80,7 @@
       "astra": { "sessions": [100, 93, 75], "usd": 6.0, "out_k": 24 },
       "sol":   { "sessions": [33, 58, 20], "usd": 3.8, "out_k": 62 },
       "sol61": { "sessions": [82, 61, 66], "usd": 0.8, "out_k": 30 },
+      "terra": { "sessions": [67, 34, 34], "usd": 0.6, "out_k": 26 },
       "deepseek": { "sessions": [0, 20, 35], "usd": 0.6, "out_k": 299 },
       "kimi": { "sessions": [0, 7, 48], "usd": 12.3, "out_k": 143 } } },
     { "task": "reach_target_multi_modal", "label": "Reach multi-modal", "values": {
@@ -79,6 +88,7 @@
       "astra": { "sessions": [75, 97, 95], "usd": 4.6, "out_k": 20 },
       "sol":   { "sessions": [73, 86, 99], "usd": 1.2, "out_k": 29 },
       "sol61": { "sessions": [81, 97, 100], "usd": 0.9, "out_k": 30 },
+      "terra": { "sessions": [86, 84, 46], "usd": 0.5, "out_k": 20 },
       "deepseek": { "sessions": [0, 10, 1], "usd": 0.5, "out_k": 228 },
       "kimi": { "sessions": [100, 59, 87], "usd": 6.3, "out_k": 96 } } }
   ],
@@ -87,6 +97,7 @@
     "astra": { "mean": 64.5, "usd": 296, "out_k": 921 },
     "sol":   { "mean": 31.2, "usd": 133, "out_k": 1635 },
     "sol61": { "mean": 40.7, "usd": 36, "out_k": 1095 },
+    "terra": { "mean": 28.6, "usd": 18, "out_k": 610 },
     "deepseek": { "mean": 13.1, "usd": 17, "out_k": 6849 },
     "kimi":  { "mean": 21.3, "usd": 328, "out_k": 3405 }
   }
