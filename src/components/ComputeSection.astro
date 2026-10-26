@@ -174,7 +174,9 @@ const aggs = compute.agents.map((ag) => ({ ag, t: compute.totals[ag.id] }));
   .who .dot { align-self: center; }
   .who b { font-weight: 650; white-space: nowrap; }
   .harness { color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .stat { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); align-items: center; column-gap: 0.6rem; }
+  /* The value column is as wide as the widest value (5 characters: 64.5%, $15.6), so the column
+     header, the widest value and the bar column share one left edge; values stay right-aligned. */
+  .stat { display: grid; grid-template-columns: 5.2ch minmax(0, 1fr); align-items: center; column-gap: 0.6rem; }
   .sv { text-align: right; font-weight: 600; }
   .sb { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) calc(var(--f) * 100%), var(--rule) 0); }
   .bnote { margin: 0.6rem 0 0; font-size: 0.8125rem; color: var(--ink-3); }
