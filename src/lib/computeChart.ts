@@ -334,13 +334,30 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
     const p = rowOf().pts[a.id];
     return [a.id, { x: S!.sc.x(p[axis]), y: S!.sc.y(p.m), task: sel < 0 ? 0 : 1 }];
   }));
-  function draw(st: St) {
+  // While points move, the frontier, its region and the leaders are hidden
+  // and each label rides along at the offset it will have at the end, so
+  // nothing snaps mid-move (a point crossing another would otherwise join the
+  // frontier, and labels would hop between sides).
+  type Frozen = Record<string, { dx: number; dy: number; anchor: string }>;
+  function draw(st: St, frozen?: Frozen) {
     const r = S!.refs;
     agents.forEach((a) => {
       const s = st[a.id], m = r[a.id];
       m.dot.setAttribute('cx', s.x); m.dot.setAttribute('cy', s.y);
       m.hit.setAttribute('cx', s.x); m.hit.setAttribute('cy', s.y);
     });
+    if (frozen) {
+      agents.forEach((a) => {
+        const f = frozen[a.id], lab = r[a.id].lab;
+        lab.setAttribute('x', st[a.id].x + f.dx); lab.setAttribute('y', st[a.id].y + f.dy); lab.setAttribute('text-anchor', f.anchor);
+      });
+      if (pair.length === 2) {
+        const [p1, p2] = pair.map((id) => st[id]);
+        r.cmp.setAttribute('x1', p1.x); r.cmp.setAttribute('y1', p1.y); r.cmp.setAttribute('x2', p2.x); r.cmp.setAttribute('y2', p2.y);
+        r.pill.setAttribute('transform', `translate(${(p1.x + p2.x) / 2} ${(p1.y + p2.y) / 2})`);
+      }
+      return;
+    }
     const xy = agents.map((a) => ({ x: st[a.id].x, y: st[a.id].y, len: (r[a.id].lab as SVGTextElement).getComputedTextLength() }));
     const yb = S!.h - S!.m.b, xr = S!.w - S!.m.r;
     const { segs } = drawFrontier(r.front, r.region, xy, edgeOf(S!.w, S!.m), yb);
@@ -394,14 +411,24 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
     cancelAnimationFrame(raf);
     const from = S!.state, to = target();
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Lay the end state out once, keep each label's offset from its point,
+    // and move with those offsets; the frontier fades back in at the end.
+    draw(to);
+    const r = S!.refs, frozen: Frozen = {};
+    agents.forEach((a) => {
+      const lab = r[a.id].lab;
+      frozen[a.id] = { dx: Number(lab.getAttribute('x')) - to[a.id].x, dy: Number(lab.getAttribute('y')) - to[a.id].y, anchor: lab.getAttribute('text-anchor') || 'start' };
+    });
+    if (!reduce) { r.svg.classList.add('moving'); draw(from, frozen); }  // back to the start before the first frame
     const t0 = performance.now();
     const step = (now: number) => {
       const t = reduce ? 1 : Math.min(1, (now - t0) / 650);
       const e = 1 - Math.pow(1 - t, 4);
       const cur: St = {};
       for (const id in to) cur[id] = { x: from[id].x + (to[id].x - from[id].x) * e, y: from[id].y + (to[id].y - from[id].y) * e, task: from[id].task + (to[id].task - from[id].task) * e };
-      S!.state = cur; draw(cur);
-      if (t < 1) raf = requestAnimationFrame(step);
+      S!.state = cur;
+      if (t < 1) { draw(cur, frozen); raf = requestAnimationFrame(step); }
+      else { draw(to); r.svg.classList.remove('moving'); }
     };
     raf = requestAnimationFrame(step);
   }
