@@ -62,8 +62,17 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
     const lo = by[0], hi = by[by.length - 1];
     return { hi, lo, r: `${fmt1(row.pts[hi.id][axis] / row.pts[lo.id][axis])}×` };
   };
-  // Narrow charts name the two ends as their point labels do.
-  const ratio = (row: Row, narrow: boolean) => { const s = spread(row), n = narrow ? tiny : (a: Agent) => a.short; return `${s.r} ${AX[axis].unit}: ${n(s.hi)} vs ${n(s.lo)}`; };
+  // The pill compares two agents the reader clicked (none is shown until then):
+  // the more successful one first, its cost (or tokens) as a multiple of the
+  // other's, and the gap in success.
+  let pair: string[] = [];
+  const ratio = (row: Row, narrow: boolean) => {
+    if (pair.length < 2) return '';
+    const n = narrow ? tiny : (a: Agent) => a.short;
+    const [a, b] = pair.map((id) => agents.find((x) => x.id === id)!).sort((x, y) => row.pts[y.id].m - row.pts[x.id].m);
+    const pa = row.pts[a.id], pb = row.pts[b.id], d = pa.m - pb.m;
+    return `${n(a)} vs ${n(b)}: ${fmt1(pa[axis] / pb[axis])}× ${AX[axis].unit}, +${fmt1(d)} points`;
+  };
   const tip = (row: Row, a: Agent) => {
     const p = row.pts[a.id];
     if (p.sessions) return `${row.label} · ${name(a)}\nSessions ${p.sessions.join(' / ')} → ${Math.round(p.m)}%\n$${fmt1(p.usd)} · ${Math.round(p.tok)}k output tokens per session`;
@@ -108,6 +117,7 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
   }
   function pill(svg: Element, text: string) {
     const g = el('g', { class: 'pill' }, svg);
+    if (!text) return g;
     const t = el('text', { x: 0, y: 4, 'text-anchor': 'middle' }, g);
     t.textContent = text;
     const b = (t as SVGTextElement).getBBox();
@@ -340,7 +350,8 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
     // label near the top needs that room, against either side of the plot.
     // The labels are placed for each and the pill keeps its side unless
     // another frees the labels clearly.
-    const { hi, lo } = spread(rowOf());
+    const sp = spread(rowOf());
+    const [hi, lo] = pair.length === 2 ? pair.map((id) => agents.find((x) => x.id === id)!) : [sp.hi, sp.lo];
     const pb = (r.pill as SVGGElement).getBBox();
     const half = pb.width / 2 + 4;
     const clamp = (x: number) => Math.min(Math.max(x, half), S!.w - half);
@@ -374,6 +385,8 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
       // scoreboard above and in the point's hover card.
       t.textContent = tiny(a);
       r[a.id].hit.dataset.tip = tip(row, a);
+      r[a.id].hit.dataset.agent = a.id;
+      r[a.id].g.classList.toggle('on', pair.includes(a.id));
       r[a.id].hit.setAttribute('aria-label', tip(row, a).replaceAll('\n', '. '));
     });
     r.pill.remove();
@@ -412,6 +425,7 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
     agents.forEach((a) => {
       const g = el('g', { style: `--c:${tintOf(a)}` }, svg);
       refs[a.id] = {
+        g,
         lead: el('line', { class: 'lead', visibility: 'hidden' }, svg),
         dot: el('circle', { class: 'dot', r: 5 }, g),
         hit: el('circle', { class: 'hit', r: 16, tabindex: 0 }, g),
@@ -513,8 +527,18 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
   root.addEventListener('click', (e) => {
     const t = (e.target as Element).closest('[data-tip]');
     if (t) { e.stopPropagation(); showTip(t); }
+    // Clicking a point picks it for the comparison; a third pick starts over.
+    const id = (t as HTMLElement | null)?.dataset?.agent;
+    if (id && S) {
+      pair = pair.includes(id) ? pair.filter((x) => x !== id) : pair.length >= 2 ? [id] : [...pair, id];
+      labels();
+    }
   }, true);
-  document.addEventListener('click', (e) => { if (!(e.target as Element).closest?.('[data-tip]')) hideTip(); });
+  document.addEventListener('click', (e) => {
+    if ((e.target as Element).closest?.('[data-tip]')) return;
+    hideTip();
+    if (pair.length && S) { pair = []; labels(); }
+  });
   addEventListener('scroll', hideTip, { passive: true });
 
   let lastW = root.clientWidth;

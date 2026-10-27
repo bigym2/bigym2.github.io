@@ -97,7 +97,7 @@ const markOf = (id: string) => makerMark[id] ?? { d: openai, box: '0 0 90 90' };
       </div>
       <div class="tip" data-tip-box role="tooltip" hidden></div>
     </div>
-    <p class="fkey"><svg width="26" height="12" viewBox="0 0 26 12" aria-hidden="true"><rect x="9" y="3" width="17" height="9" /><polyline points="1,9 9,9 9,3 26,3" /></svg>Pareto frontier; the shaded area is beaten on both axes</p>
+    <p class="fkey"><svg width="26" height="12" viewBox="0 0 26 12" aria-hidden="true"><rect x="9" y="3" width="17" height="9" /><polyline points="1,9 9,9 9,3 26,3" /></svg>Pareto frontier; the shaded area is beaten on both axes. Click two points to compare them</p>
 
     <!-- Task filter for the chart; hidden in Grid view, where every task has its own panel. -->
     <div class="chips" data-chips role="group" aria-label="Task">
@@ -277,6 +277,7 @@ const markOf = (id: string) => makerMark[id] ?? { d: openai, box: '0 0 90 90' };
   .compute svg .region { fill: var(--ink); opacity: 0.045; }
   .compute svg .lead { stroke: var(--ink-3); stroke-width: 0.75; }
   .compute svg .dot { fill: var(--c); stroke: rgb(0 0 0 / 0.8); stroke-width: 0.75; }
+  .compute svg g.on .dot { stroke: var(--ink); stroke-width: 2.5; }
   .compute svg .hit { fill: transparent; cursor: pointer; outline: none; }
   .compute svg .hit:focus-visible { stroke: var(--ink); stroke-width: 1.5; }
   /* A halo in the background colour lets lines pass behind labels. */
