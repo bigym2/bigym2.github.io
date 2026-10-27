@@ -66,12 +66,11 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
   // the more successful one first, its cost (or tokens) as a multiple of the
   // other's, and the gap in success.
   let pair: string[] = [];
-  const ratio = (row: Row, narrow: boolean) => {
+  const ratio = (row: Row, _narrow: boolean) => {
     if (pair.length < 2) return '';
-    const n = narrow ? tiny : (a: Agent) => a.short;
     const [a, b] = pair.map((id) => agents.find((x) => x.id === id)!).sort((x, y) => row.pts[y.id].m - row.pts[x.id].m);
     const pa = row.pts[a.id], pb = row.pts[b.id], d = pa.m - pb.m;
-    return `${n(a)} vs ${n(b)}: ${fmt1(pa[axis] / pb[axis])}× ${AX[axis].unit}, +${fmt1(d)} points`;
+    return `${fmt1(pa[axis] / pb[axis])}× ${AX[axis].unit} · +${fmt1(d)} pts`;
   };
   const tip = (row: Row, a: Agent) => {
     const p = row.pts[a.id];
@@ -345,27 +344,25 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
     const xy = agents.map((a) => ({ x: st[a.id].x, y: st[a.id].y, len: (r[a.id].lab as SVGTextElement).getComputedTextLength() }));
     const yb = S!.h - S!.m.b, xr = S!.w - S!.m.r;
     const { segs } = drawFrontier(r.front, r.region, xy, edgeOf(S!.w, S!.m), yb);
-    // The pill sits in the top margin, so it never stands between a point
-    // and its label: over the span of the spread's two ends, or, where a
-    // label near the top needs that room, against either side of the plot.
-    // The labels are placed for each and the pill keeps its side unless
-    // another frees the labels clearly.
-    const sp = spread(rowOf());
-    const [hi, lo] = pair.length === 2 ? pair.map((id) => agents.find((x) => x.id === id)!) : [sp.hi, sp.lo];
-    const pb = (r.pill as SVGGElement).getBBox();
-    const half = pb.width / 2 + 4;
-    const clamp = (x: number) => Math.min(Math.max(x, half), S!.w - half);
-    const py = 14;
-    const sides = [clamp((st[hi.id].x + st[lo.id].x) / 2), clamp(S!.m.l + half - 4), clamp(xr - half + 4)];
-    const runs = sides.map((px, k) => {
-      const out = place(xy, S!.m.l + 4, S!.w, yb, 11, 6,
-        [...S!.ticks, { x0: px + pb.x - 2, x1: px + pb.x + pb.width + 2, y0: py + pb.y - 2, y1: py + pb.y + pb.height + 2 }], r.keys, segs);
-      return { px, out, cost: out.cost + (k ? 10 : 0) - (r.side === k ? 15 : 0) };
-    });
-    const k = runs.reduce((b, q, j) => (q.cost < runs[b].cost ? j : b), 0);
-    const { px, out: spots } = runs[k];
-    r.side = k;
-    r.pill.setAttribute('transform', `translate(${px} ${py})`);
+    // A comparison is drawn between its two points: a dashed line joining
+    // them and the figures on a pill at the line's middle. Point labels keep
+    // clear of the pill.
+    const avoid = [...S!.ticks];
+    if (pair.length === 2) {
+      const [p1, p2] = pair.map((id) => st[id]);
+      r.cmp.setAttribute('x1', p1.x); r.cmp.setAttribute('y1', p1.y);
+      r.cmp.setAttribute('x2', p2.x); r.cmp.setAttribute('y2', p2.y);
+      r.cmp.setAttribute('visibility', 'visible');
+      const pb = (r.pill as SVGGElement).getBBox();
+      const half = pb.width / 2 + 4;
+      const px = Math.min(Math.max((p1.x + p2.x) / 2, S!.m.l + half), xr - half);
+      const py = Math.min(Math.max((p1.y + p2.y) / 2, S!.m.t + 10), yb - 10);
+      r.pill.setAttribute('transform', `translate(${px} ${py})`);
+      avoid.push({ x0: px + pb.x - 2, x1: px + pb.x + pb.width + 2, y0: py + pb.y - 2, y1: py + pb.y + pb.height + 2 });
+    } else {
+      r.cmp.setAttribute('visibility', 'hidden');
+    }
+    const spots = place(xy, S!.m.l + 4, S!.w, yb, 11, 6, avoid, r.keys, segs);
     r.keys = spots.map((s) => (s as any).key);
     spots.forEach((p, i) => {
       const a = r[agents[i].id];
@@ -421,7 +418,8 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
     const svg = el('svg', { width: w, height: h, viewBox: `0 0 ${w} ${h}`, role: 'group', 'aria-label': `Success rate against ${AX[axis].unit} for ${agents.map((a) => a.model).join(', ')}` }, plotHost);
     const sc = scale(w, h, m);
     axes(svg, w, h, m, sc, { yt: [0, 25, 50, 75, 100], ticks: w < 480 ? (axis === 'usd' ? [0.5, 2, 5, 20] : [1, 5, 20, 50]) : AX[axis].ticks, titles: true, grid: true });
-    const refs: any = { svg, keys: [], region: el('polygon', { class: 'region' }, svg), front: el('polyline', { class: 'front' }, svg), pill: el('g', {}, svg) };
+    const refs: any = { svg, keys: [], region: el('polygon', { class: 'region' }, svg), front: el('polyline', { class: 'front' }, svg),
+      cmp: el('line', { class: 'cmp', visibility: 'hidden' }, svg), pill: el('g', {}, svg) };
     agents.forEach((a) => {
       const g = el('g', { style: `--c:${tintOf(a)}` }, svg);
       refs[a.id] = {
@@ -532,6 +530,7 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
     if (id && S) {
       pair = pair.includes(id) ? pair.filter((x) => x !== id) : pair.length >= 2 ? [id] : [...pair, id];
       labels();
+      if (pair.length === 2) hideTip();  // the pill now says it; the card would cover the line
     }
   }, true);
   document.addEventListener('click', (e) => {
