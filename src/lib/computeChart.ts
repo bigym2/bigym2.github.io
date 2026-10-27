@@ -71,11 +71,18 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
     return `${row.label} · ${name(a)}\n${fmt1(p.m)}% over ${cells} sessions\n$${t.usd} · ${fmtK(t.out_k)} output tokens in total`;
   };
 
+  // Cost runs left to right (cheaper on the left, the better corner top
+  // left), as on Artificial Analysis, ARC Prize and HAL. Charts that plot
+  // one curve per model across efforts (Cursor, LMArena) flip it so the
+  // curves climb to the right; with one point per agent there is no curve.
+  const FLIP = false;
+  const edgeOf = (w: number, m: { l: number; r: number }) => (FLIP ? m.l : w - m.r);
   function scale(w: number, h: number, m: { l: number; r: number; t: number; b: number }) {
     const k = AX[axis];
+    const f = (v: number) => (Math.log(v / k.lo) / Math.log(k.hi / k.lo)) * (w - m.l - m.r);
     return {
       k,
-      x: (v: number) => m.l + (Math.log(v / k.lo) / Math.log(k.hi / k.lo)) * (w - m.l - m.r),
+      x: (v: number) => (FLIP ? w - m.r - f(v) : m.l + f(v)),
       y: (v: number) => m.t + (1 - v / 100) * (h - m.t - m.b),
     };
   }
@@ -116,23 +123,24 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
   type XY = { x: number; y: number };
   const poly = (pts: XY[]) => pts.map((p) => `${p.x},${p.y}`).join(' ');
   // The Pareto frontier: the agents no other agent beats on both axes (as
-  // cheap or cheaper, and at least as successful). In pixels cheaper is
-  // left and more successful is up, so walking right a point joins the
-  // frontier only if it sits above every point before it.
+  // cheap or cheaper, and at least as successful). Walking from the cheap
+  // end (the right, with FLIP) a point joins the frontier only if it sits
+  // above every point before it.
   const frontier = (xy: XY[]) => {
-    const idx = xy.map((_, i) => i).sort((a, b) => xy[a].x - xy[b].x || xy[a].y - xy[b].y);
+    const idx = xy.map((_, i) => i).sort((a, b) => (FLIP ? xy[b].x - xy[a].x : xy[a].x - xy[b].x) || xy[a].y - xy[b].y);
     const on: number[] = [];
     let best = Infinity;
     for (const i of idx) if (xy[i].y < best - 0.01) { on.push(i); best = xy[i].y; }
     return on;
   };
   // Its step line: the best success holds until the next frontier agent's
-  // cost, then rises to it; past the last one it runs on to the plot's edge.
-  // The region under it, to the right, is beaten on both axes.
-  const steps = (pts: XY[], xr: number) => {
+  // cost, then rises to it; past the last one it runs on to the plot's
+  // expensive edge. The region under it is beaten on both axes.
+  const steps = (pts: XY[], edge: number) => {
     const out = [pts[0]];
     for (let k = 1; k < pts.length; k++) out.push({ x: pts[k].x, y: pts[k - 1].y }, pts[k]);
-    out.push({ x: Math.max(xr, pts[pts.length - 1].x), y: pts[pts.length - 1].y });
+    const last = pts[pts.length - 1].x;
+    out.push({ x: FLIP ? Math.min(edge, last) : Math.max(edge, last), y: pts[pts.length - 1].y });
     return out;
   };
   const segsOf = (line: XY[]) => line.slice(1).map((q, k) => [line[k], q] as const);
@@ -326,7 +334,7 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
     });
     const xy = agents.map((a) => ({ x: st[a.id].x, y: st[a.id].y, len: (r[a.id].lab as SVGTextElement).getComputedTextLength() }));
     const yb = S!.h - S!.m.b, xr = S!.w - S!.m.r;
-    const { segs } = drawFrontier(r.front, r.region, xy, xr, yb);
+    const { segs } = drawFrontier(r.front, r.region, xy, edgeOf(S!.w, S!.m), yb);
     // The pill sits in the top margin, so it never stands between a point
     // and its label: over the span of the spread's two ends, or, where a
     // label near the top needs that room, against either side of the plot.
@@ -339,7 +347,7 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
     const py = 14;
     const sides = [clamp((st[hi.id].x + st[lo.id].x) / 2), clamp(S!.m.l + half - 4), clamp(xr - half + 4)];
     const runs = sides.map((px, k) => {
-      const out = place(xy, S!.m.l + 4, S!.w, yb, 14, 8,
+      const out = place(xy, S!.m.l + 4, S!.w, yb, 11, 6,
         [...S!.ticks, { x0: px + pb.x - 2, x1: px + pb.x + pb.width + 2, y0: py + pb.y - 2, y1: py + pb.y + pb.height + 2 }], r.keys, segs);
       return { px, out, cost: out.cost + (k ? 10 : 0) - (r.side === k ? 15 : 0) };
     });
@@ -351,7 +359,7 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
     spots.forEach((p, i) => {
       const a = r[agents[i].id];
       a.lab.setAttribute('x', p.x); a.lab.setAttribute('y', p.y); a.lab.setAttribute('text-anchor', p.anchor);
-      leader(a.lead, xy[i], p, xy[i].len, 7);
+      leader(a.lead, xy[i], p, xy[i].len, 5);
     });
   }
   function labels() {
@@ -362,8 +370,9 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
       // Narrow charts drop the effort and the vendor prefix (both are in the
       // scoreboard above, next to the same colour) to leave room, except
       // where two models would then share a name (GPT-6 Sol, GPT-6.1 Sol).
-      el('tspan', {}, t).textContent = `${S!.w < 720 ? tiny(a) : name(a)} `;
-      el('tspan', { class: 'v' }, t).textContent = sel < 0 ? `${fmt1(row.pts[a.id].m)}%` : `${Math.round(row.pts[a.id].m)}%`;
+      // Only the name, in the agent's colour: effort and score are in the
+      // scoreboard above and in the point's hover card.
+      t.textContent = tiny(a);
       r[a.id].hit.dataset.tip = tip(row, a);
       r[a.id].hit.setAttribute('aria-label', tip(row, a).replaceAll('\n', '. '));
     });
@@ -404,9 +413,9 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
       const g = el('g', { style: `--c:${tintOf(a)}` }, svg);
       refs[a.id] = {
         lead: el('line', { class: 'lead', visibility: 'hidden' }, svg),
-        dot: el('circle', { class: 'dot', r: 7 }, g),
+        dot: el('circle', { class: 'dot', r: 5 }, g),
         hit: el('circle', { class: 'hit', r: 16, tabindex: 0 }, g),
-        lab: el('text', { class: 'lab' }, svg),
+        lab: el('text', { class: 'lab', style: `--c:${tintOf(a)}` }, svg),
       };
     });
     S = { state: {} as St, w, h, m, ticks: tickBoxes(svg), sc, refs };
@@ -435,10 +444,10 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
       axes(svg, w, h, m, sc, { yt: [0, 50, 100], ticks: narrow ? [1, 10] : axis === 'usd' ? [0.5, 2, 5, 20] : [1, 5, 20, 50], titles: false, grid: false });
       const xy = agents.map((a) => ({ x: sc.x(row.pts[a.id][axis]), y: sc.y(row.pts[a.id].m), len: 0 }));
       const region = el('polygon', { class: 'region' }, svg);
-      const { segs } = drawFrontier(el('polyline', { class: 'front' }, svg), region, xy, w - m.r, h - m.b);
+      const { segs } = drawFrontier(el('polyline', { class: 'front' }, svg), region, xy, edgeOf(w, m), h - m.b);
       const vals = agents.map((a, i) => {
         const g = el('g', { style: `--c:${tintOf(a)}` }, svg);
-        el('circle', { class: 'dot', cx: xy[i].x, cy: xy[i].y, r: 6 }, g);
+        el('circle', { class: 'dot', cx: xy[i].x, cy: xy[i].y, r: 4.5 }, g);
         const t = el('text', { class: 'val' }, g) as SVGTextElement;
         t.textContent = `${Math.round(row.pts[a.id].m)}%`;
         xy[i].len = t.getComputedTextLength();
@@ -446,9 +455,9 @@ export function mountCompute(root: HTMLElement, data: ComputeData) {
         return t;
       });
       const leads = agents.map(() => el('line', { class: 'lead', visibility: 'hidden' }, svg));
-      place(xy, m.l + 3, w, h - m.b, 10, 7, tickBoxes(svg), [], segs).forEach((p, i) => {
+      place(xy, m.l + 3, w, h - m.b, 9, 5.5, tickBoxes(svg), [], segs).forEach((p, i) => {
         vals[i].setAttribute('x', String(p.x)); vals[i].setAttribute('y', String(p.y - 0.5)); vals[i].setAttribute('text-anchor', p.anchor);
-        leader(leads[i], xy[i], p, xy[i].len, 6);
+        leader(leads[i], xy[i], p, xy[i].len, 4.5);
       });
     });
     root.querySelector('[data-fx]')!.textContent = AX[axis].title;

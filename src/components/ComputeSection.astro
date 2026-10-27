@@ -35,6 +35,16 @@ const board = [...compute.agents].sort((a, b) => compute.totals[b.id].mean - com
 
 const rows = compute.rows.map((r) => ({ ...r, pts: compute.agents.map((ag) => ({ ag, c: r.values[ag.id], m: mean(r.values[ag.id].sessions) })) }));
 const aggs = compute.agents.map((ag) => ({ ag, t: compute.totals[ag.id] }));
+import { siDeepseek, siKimi } from 'simple-icons';
+import { claude, openai } from '../lib/protocolMarks';
+// The maker's mark in the agent's series colour: the shape says whose model it is, the
+// colour (shared with the chart's points) tells the OpenAI models apart.
+const makerMark: Record<string, { d: string; box: string }> = {
+  opus: { d: claude, box: '0 0 24 24' },
+  deepseek: { d: siDeepseek.path, box: '0 0 24 24' },
+  kimi: { d: siKimi.path, box: '0 0 24 24' },
+};
+const markOf = (id: string) => makerMark[id] ?? { d: openai, box: '0 0 90 90' };
 ---
 <div class="compute">
   {quote && <figure class="quote measure">
@@ -58,7 +68,7 @@ const aggs = compute.agents.map((ag) => ({ ag, t: compute.totals[ag.id] }));
         </div>
         {board.map((b) => (
           <div class="brow" role="row" style={`--c:var(--series-${b.ag.id})`}>
-            <span class="who" role="rowheader"><span class="dot" aria-hidden="true"></span><b>{b.ag.model}</b><span class="harness">{b.ag.effort} · {b.ag.harness}</span></span>
+            <span class="who" role="rowheader"><svg class="mark" viewBox={markOf(b.ag.id).box} aria-hidden="true"><path d={markOf(b.ag.id).d} fill-rule="evenodd" /></svg><b>{b.ag.model}</b><span class="harness">{b.ag.effort} · {b.ag.harness}</span></span>
             {b.cells.map((c) => <span class="stat" role="cell"><span class="sv">{c.v}</span><span class="sb" style={`--f:${c.f}`} aria-hidden="true"></span></span>)}
           </div>
         ))}
@@ -106,7 +116,7 @@ const aggs = compute.agents.map((ag) => ({ ag, t: compute.totals[ag.id] }));
         <thead>
           <tr>
             <th scope="col" rowspan="2">Task</th>
-            {compute.agents.map((ag) => <th scope="colgroup" colspan="4" class="grp"><span class="dot" style={`--c:var(--series-${ag.id})`} aria-hidden="true"></span>{ag.short} ({ag.effort})</th>)}
+            {compute.agents.map((ag) => <th scope="colgroup" colspan="4" class="grp" style={`--c:var(--series-${ag.id})`}><svg class="mark" viewBox={markOf(ag.id).box} aria-hidden="true"><path d={markOf(ag.id).d} fill-rule="evenodd" /></svg>{ag.short} ({ag.effort})</th>)}
           </tr>
           <tr>
             {compute.agents.map(() => <><th scope="col">Sessions</th><th scope="col">Mean</th><th scope="col">$</th><th scope="col">Tokens</th></>)}
@@ -171,7 +181,7 @@ const aggs = compute.agents.map((ag) => ({ ag, t: compute.totals[ag.id] }));
   .brow { display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr)); align-items: center; column-gap: 1.5rem; padding: 0.55rem 0; border-bottom: 1px solid var(--rule); }
   .bhead { padding-top: 0; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); border-bottom-color: var(--rule-strong); }
   .who { display: flex; align-items: baseline; gap: 0.5rem; min-width: 0; }
-  .who .dot { align-self: center; }
+  .mark { width: 1rem; height: 1rem; flex: none; fill: var(--c); align-self: center; }
   .who b { font-weight: 650; white-space: nowrap; }
   .harness { color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* The value column is as wide as the widest value (5 characters: 64.5%, $15.6), so the column
@@ -233,7 +243,7 @@ const aggs = compute.agents.map((ag) => ({ ag, t: compute.totals[ag.id] }));
   th, td { padding: 0.5rem 0.45rem; text-align: left; font-weight: 400; white-space: nowrap; }
   thead th { font-weight: 600; font-size: 0.75rem; color: var(--ink-3); border-bottom: 1px solid var(--rule-strong); vertical-align: bottom; }
   thead th.grp { color: var(--ink); font-size: 0.875rem; }
-  thead th.grp .dot { margin-right: 0.4rem; vertical-align: -0.05rem; }
+  thead th.grp .mark { display: inline-block; width: 0.85rem; height: 0.85rem; margin-right: 0.4rem; vertical-align: -0.1rem; }
   tbody tr, tfoot tr { border-bottom: 1px solid var(--rule); }
   tfoot tr { border-top: 1px solid var(--rule-strong); }
   tbody th, tfoot th { font-weight: 500; }
@@ -272,7 +282,7 @@ const aggs = compute.agents.map((ag) => ({ ag, t: compute.totals[ag.id] }));
   /* A halo in the background colour lets lines pass behind labels. */
   .compute svg .lab, .compute svg .val { paint-order: stroke; stroke: var(--paper-2); stroke-width: 4px; stroke-linejoin: round; }
   @media (hover: hover) { .compute .panel:hover svg .val { stroke: var(--paper-3); } }
-  .compute svg .lab { fill: var(--ink); font-size: 12.5px; font-weight: 650; }
+  .compute svg .lab { fill: var(--c, var(--ink)); font-size: 13px; font-weight: 600; }
   .compute svg .lab .v { fill: var(--ink-2); font-weight: 400; }
   .compute svg .val { fill: var(--ink-2); font-size: 11.5px; font-weight: 600; }
   .compute svg .pill rect { fill: var(--ink); }
