@@ -8,6 +8,8 @@ import { VIEWS, entries, sceneColumns, rows, missing, chart, CHART, nameLines } 
 import Dial from './Dial.astro';
 import { makerMarks, type Maker } from '../../lib/makerMarks';
 
+// the task set the board opens on: the 9 core tasks, the one set every agent and the paper's learned policies share
+const START = 'core';
 const views = VIEWS.map((v) => {
   const es = entries(v.id);
   const top = Math.max(...es.map((e) => e.score));
@@ -22,17 +24,17 @@ const mark = (m: string) => makerMarks[m as Maker];
     <header class="head">
       <div>
         <h2>Leaderboard</h2>
-        <p>Mean success over <span data-which>all 20 tasks</span>, {board.sessions_per_task} independent sessions per task, 100 hidden episodes per final program.</p>
+        <p>Mean success over <span data-which>{VIEWS.find((v) => v.id === START)!.lede}</span>, {board.sessions_per_task} independent sessions per task, 100 hidden episodes per final program.</p>
       </div>
       <div class="seg" role="group" aria-label="Task set">
-        {VIEWS.map((v) => <button type="button" data-set={v.id} data-lede={v.lede} aria-pressed={v.id === 'all' ? 'true' : 'false'}>{v.label}</button>)}
+        {VIEWS.map((v) => <button type="button" data-set={v.id} data-lede={v.lede} aria-pressed={v.id === START ? 'true' : 'false'}>{v.label}</button>)}
       </div>
     </header>
 
     <div class="top">
       <div class="barcol">
       {views.map((v) => (
-      <div class="view" data-view={v.id} hidden={v.id !== 'all'}>
+      <div class="view" data-view={v.id} hidden={v.id !== START}>
         <div class="scroll">
           <div class="chart" style={`--n: ${v.es.length}`}>
             <div class="plot">
@@ -64,14 +66,14 @@ const mark = (m: string) => makerMarks[m as Maker];
       ))}
       </div>
       <div class="dials">
-        <Dial uid="all" view="all" />
-        <Dial uid="core" view="core" only={board.core} hidden />
-        <Dial uid="ext" view="ext" only={board.extended} hidden />
+        <Dial uid="all" view="all" hidden={START !== 'all'} />
+        <Dial uid="core" view="core" only={board.core} hidden={START !== 'core'} />
+        <Dial uid="ext" view="ext" only={board.extended} hidden={START !== 'ext'} />
       </div>
     </div>
 
     {views.map((v) => (
-      <div class="view" data-view={v.id} hidden={v.id !== 'all'}>
+      <div class="view" data-view={v.id} hidden={v.id !== START}>
         <h3>Success by task</h3>
         <div class="ptrow">
         <div class="scroll">
