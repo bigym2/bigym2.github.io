@@ -19,7 +19,6 @@ const tiles = [
   { kind: 'huggingface', label: 'Data on Hugging Face' },
   { kind: 'docs', label: 'Docs' },
 ].map((t) => ({ ...t, url: url(t.kind) })).filter((t) => t.url);
-const updated = new Date(`${board.updated}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 // each clip rendered twice, over a light ground and over a dark one (public/media/hero/dark/)
 const clips = Object.fromEntries(['plate', 'cup', 'cupboard', 'blocks', 'reach', 'dishwasher', 'contact'].map((c) => [c, { light: media(`hero/${c}.mp4`), dark: media(`hero/dark/${c}.mp4`) }]));
 ---
@@ -31,12 +30,11 @@ const clips = Object.fromEntries(['plate', 'cup', 'cupboard', 'blocks', 'reach',
   </div>
   <div class="toggle"><ThemeToggle /></div>
   <div class="wrap over">
-    <p class="topline"><span class="brand" role="img" aria-label="BiGym"><Logo size={24} /></span><span class="updated">Updated {updated}</span></p>
+    <p class="topline"><span class="brand" role="img" aria-label="BiGym"><Logo size={24} /></span><span class="org"><img src={asset('/logos/imperial.png')} alt="Imperial College London" class="imperial" width="1200" height="132" /></span></p>
     <div class="titleblock">
       <h1><span class="name">{site.title}</span><span class="sub">{site.subtitle}</span></h1>
       <ul class="authors">
         {site.authors.map((a) => <li>{a.url ? <a href={a.url} target="_blank" rel="noopener">{a.name}</a> : a.name}</li>)}
-        <li class="org"><img src={asset('/logos/imperial.png')} alt="Imperial College London" class="imperial" width="1200" height="132" /></li>
       </ul>
     </div>
     <p class="lead">BiGym 2.0 evaluates AI agents on their ability to control a humanoid robot. For each household task, an agent watches one demonstration and writes the program that drives a Unitree G1. Its score is the share of hidden episodes that program completes.</p>
@@ -100,16 +98,15 @@ const clips = Object.fromEntries(['plate', 'cup', 'cupboard', 'blocks', 'reach',
   .topline { margin: 0; display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; font: 0.95rem var(--sans); color: var(--ink-3); }
   .brand { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
   .brand :global(.logo) { flex: none; }
-  .updated { padding-left: 0.9rem; border-left: 1px solid var(--rule-strong); }
   /* the author line (names and the wordmark) runs a little wider than the title, so it stays on one line */
   .over > .titleblock { display: grid; gap: 0.9rem; max-width: 46rem; }
   .titleblock h1 { max-width: 38rem; }
   .authors { margin: 0.35rem 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 1.1rem; font: 500 1rem var(--sans); color: var(--ink); }
   .authors a { color: inherit; text-decoration: underline; text-decoration-color: var(--rule-strong); text-underline-offset: 0.2em; }
   .authors a:hover { text-decoration-color: currentColor; }
-  /* Imperial's wordmark closes the author line, in the text's colour (black, or white on dark) rather than its blue */
-  .org { display: flex; align-items: center; padding-left: 1.1rem; border-left: 1px solid var(--rule-strong); }
-  .imperial { height: 0.72rem; width: auto; display: block; filter: brightness(0); opacity: 0.86; }
+  /* the page's header: the BiGym mark, then Imperial's wordmark in the text's colour (black, or white on dark) */
+  .org { display: flex; align-items: center; align-self: stretch; padding-left: 0.95rem; border-left: 1px solid var(--rule-strong); }
+  .imperial { height: 0.9rem; width: auto; display: block; filter: brightness(0); opacity: 0.86; }
   :global(:root[data-theme='dark']) .imperial { filter: brightness(0) invert(1); opacity: 0.9; }
   h1 { margin: 0; display: grid; gap: 0.35rem; position: relative; }
   .name { font: 400 calc(var(--stageh) * 0.15)/0.95 'Geist Serif', 'STIX Two Text Variable', Georgia, serif; letter-spacing: -0.03em; white-space: nowrap; }

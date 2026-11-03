@@ -16,6 +16,7 @@ const views = VIEWS.map((v) => {
   const scale = Math.ceil((top + 6) / 20) * 20;
   return { ...v, es, scale, cols: sceneColumns(v.id), ch: chart(rows(v.id)), left: missing(v.id) };
 });
+const updated = new Date(`${board.updated}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 const usd = (c: number) => (c < 10 ? `$${c.toFixed(2)}` : `$${c.toFixed(1)}`);
 const mark = (m: string) => makerMarks[m as Maker];
 ---
@@ -24,7 +25,7 @@ const mark = (m: string) => makerMarks[m as Maker];
     <header class="head">
       <div>
         <h2>Leaderboard</h2>
-        <p>Mean success over <span data-which>{VIEWS.find((v) => v.id === START)!.lede}</span>, {board.sessions_per_task} independent sessions per task, 100 hidden episodes per final program.</p>
+        <p>Mean success over <span data-which>{VIEWS.find((v) => v.id === START)!.lede}</span>, {board.sessions_per_task} independent sessions per task, 100 hidden episodes per final program. <span class="upd">Updated {updated}.</span></p>
       </div>
       <div class="seg" role="group" aria-label="Task set">
         {VIEWS.map((v) => <button type="button" data-set={v.id} data-lede={v.lede} aria-pressed={v.id === START ? 'true' : 'false'}>{v.label}</button>)}
@@ -221,6 +222,7 @@ const mark = (m: string) => makerMarks[m as Maker];
   h2 { margin: 0; font-family: var(--serif); font-weight: 600; font-size: clamp(1.9rem, 3.4vw, 2.4rem); line-height: 1.1; }
   .head p { margin: 0.4rem 0 0; color: var(--ink-2); max-width: 44rem; }
   [data-which] { color: var(--ink); font-weight: 600; }
+  .upd { color: var(--ink-3); white-space: nowrap; }
   .seg { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 999px; padding: 3px; gap: 2px; }
   .seg button { font: 600 0.875rem var(--sans); border: 0; background: transparent; color: var(--ink-2); padding: 0.4rem 0.9rem; border-radius: 999px; cursor: pointer; }
   .seg button[aria-pressed='true'] { background: var(--ink); color: var(--paper); }
