@@ -1,0 +1,397 @@
+{
+ "updated": "2026-10-31",
+ "sessions_per_task": 3,
+ "budget_steps": 101000,
+ "core": [
+  "dishwasher_close",
+  "dishwasher_load_cups",
+  "drawer_top_close",
+  "drawer_top_open",
+  "move_plate",
+  "move_two_plates",
+  "pick_box",
+  "reach_target_dual",
+  "reach_target_multi_modal"
+ ],
+ "extended": [
+  "dishwasher_load_cutlery",
+  "dishwasher_load_plates",
+  "flip_cup",
+  "flip_cutlery",
+  "put_cups",
+  "reach_target_single",
+  "sandwich_remove",
+  "saucepan_to_hob",
+  "stack_blocks",
+  "wall_cupboard_close",
+  "wall_cupboard_open"
+ ],
+ "fixed_start": [
+  "dishwasher_close",
+  "wall_cupboard_open",
+  "wall_cupboard_close"
+ ],
+ "models": [
+  {
+   "id": "opus",
+   "name": "Claude Opus 5.5",
+   "maker": "claude",
+   "harness": "Claude Code 2.1.280",
+   "efforts": [
+    {
+     "effort": "high",
+     "tested": "2026-10-07",
+     "per": {
+      "dishwasher_close": 33.33,
+      "dishwasher_load_cups": 28.33,
+      "drawer_top_close": 100.0,
+      "drawer_top_open": 99.0,
+      "move_plate": 19.67,
+      "move_two_plates": 15.0,
+      "pick_box": 71.33,
+      "reach_target_dual": 78.33,
+      "reach_target_multi_modal": 100.0,
+      "dishwasher_load_cutlery": 9.67,
+      "dishwasher_load_plates": 13.0,
+      "flip_cup": 94.0,
+      "flip_cutlery": 29.67,
+      "put_cups": 4.67,
+      "reach_target_single": 99.67,
+      "sandwich_remove": 0.33,
+      "saucepan_to_hob": 8.33,
+      "stack_blocks": 33.67,
+      "wall_cupboard_close": 100.0,
+      "wall_cupboard_open": 100.0
+     },
+     "cost": {
+      "core": 392.81,
+      "ext": 671.82
+     }
+    }
+   ]
+  },
+  {
+   "id": "astra",
+   "name": "GPT-6 Astra",
+   "maker": "openai",
+   "harness": "Codex CLI 0.153.4",
+   "efforts": [
+    {
+     "effort": "high",
+     "tested": "2026-10-02",
+     "per": {
+      "dishwasher_close": 100.0,
+      "dishwasher_load_cups": 21.33,
+      "drawer_top_close": 98.67,
+      "drawer_top_open": 99.0,
+      "move_plate": 14.0,
+      "move_two_plates": 15.67,
+      "pick_box": 53.67,
+      "reach_target_dual": 89.33,
+      "reach_target_multi_modal": 89.0,
+      "dishwasher_load_cutlery": 1.67,
+      "dishwasher_load_plates": 3.67,
+      "flip_cup": 38.33,
+      "flip_cutlery": 1.0,
+      "put_cups": 8.0,
+      "reach_target_single": 98.33,
+      "sandwich_remove": 5.0,
+      "saucepan_to_hob": 26.33,
+      "stack_blocks": 1.0,
+      "wall_cupboard_close": 100.0,
+      "wall_cupboard_open": 66.67
+     },
+     "cost": {
+      "core": 295.73,
+      "ext": 574.65
+     }
+    }
+   ]
+  },
+  {
+   "id": "sol61",
+   "name": "GPT-6.1 Sol",
+   "maker": "openai",
+   "harness": "Codex CLI 0.160.0",
+   "efforts": [
+    {
+     "effort": "high",
+     "tested": "2026-10-03",
+     "per": {
+      "dishwasher_close": 0.0,
+      "dishwasher_load_cups": 17.67,
+      "drawer_top_close": 100.0,
+      "drawer_top_open": 58.0,
+      "move_plate": 8.0,
+      "move_two_plates": 2.67,
+      "pick_box": 17.33,
+      "reach_target_dual": 69.67,
+      "reach_target_multi_modal": 92.67,
+      "dishwasher_load_cutlery": 0.0,
+      "dishwasher_load_plates": 0.67,
+      "flip_cup": 24.67,
+      "flip_cutlery": 4.67,
+      "put_cups": 0.0,
+      "reach_target_single": 92.67,
+      "sandwich_remove": 0.33,
+      "saucepan_to_hob": 25.0,
+      "stack_blocks": 0.33,
+      "wall_cupboard_close": 100.0,
+      "wall_cupboard_open": 100.0
+     },
+     "cost": {
+      "core": 35.66,
+      "ext": 79.27
+     }
+    }
+   ]
+  },
+  {
+   "id": "sol",
+   "name": "GPT-6 Sol",
+   "maker": "openai",
+   "harness": "Codex CLI 0.157.1",
+   "efforts": [
+    {
+     "effort": "high",
+     "tested": "2026-10-02",
+     "per": {
+      "dishwasher_close": 0.0,
+      "dishwasher_load_cups": 1.67,
+      "drawer_top_close": 99.33,
+      "drawer_top_open": 52.33,
+      "move_plate": 4.33,
+      "move_two_plates": 0.0,
+      "pick_box": 0.0,
+      "reach_target_dual": 37.0,
+      "reach_target_multi_modal": 86.0,
+      "dishwasher_load_cutlery": 0.33,
+      "dishwasher_load_plates": 0.0,
+      "flip_cup": 0.67,
+      "flip_cutlery": 1.0,
+      "put_cups": 0.0,
+      "reach_target_single": 61.0,
+      "sandwich_remove": 0.0,
+      "saucepan_to_hob": 0.0,
+      "stack_blocks": 0.0,
+      "wall_cupboard_close": 66.67,
+      "wall_cupboard_open": 0.0
+     },
+     "cost": {
+      "core": 132.74,
+      "ext": 144.94
+     }
+    }
+   ]
+  },
+  {
+   "id": "terra",
+   "name": "GPT-6.1 Terra",
+   "maker": "openai",
+   "harness": "Codex CLI 0.164.0",
+   "efforts": [
+    {
+     "effort": "high",
+     "tested": "2026-10-26",
+     "per": {
+      "dishwasher_close": 0.0,
+      "dishwasher_load_cups": 12.0,
+      "drawer_top_close": 79.67,
+      "drawer_top_open": 42.33,
+      "move_plate": 1.33,
+      "move_two_plates": 1.67,
+      "pick_box": 3.67,
+      "reach_target_dual": 45.0,
+      "reach_target_multi_modal": 72.0,
+      "dishwasher_load_cutlery": 0.33,
+      "dishwasher_load_plates": 0.0,
+      "flip_cup": 3.67,
+      "flip_cutlery": 1.0,
+      "put_cups": 0.0,
+      "reach_target_single": 58.0,
+      "sandwich_remove": 0.0,
+      "saucepan_to_hob": 0.0,
+      "stack_blocks": 0.0,
+      "wall_cupboard_close": 33.33,
+      "wall_cupboard_open": 0.0
+     },
+     "cost": {
+      "core": 17.79,
+      "ext": 21.48
+     }
+    },
+    {
+     "effort": "max",
+     "tested": "2026-10-28",
+     "per": {
+      "dishwasher_close": 33.33,
+      "dishwasher_load_cups": 15.67,
+      "drawer_top_close": 100.0,
+      "drawer_top_open": 83.67,
+      "move_plate": 11.67,
+      "move_two_plates": 0.0,
+      "pick_box": 32.0,
+      "reach_target_dual": 81.0,
+      "reach_target_multi_modal": 84.67,
+      "dishwasher_load_cutlery": 1.33,
+      "dishwasher_load_plates": 1.67,
+      "flip_cup": 0.33,
+      "flip_cutlery": 3.67,
+      "put_cups": 0.67,
+      "reach_target_single": 94.67,
+      "sandwich_remove": 0.0,
+      "saucepan_to_hob": 0.0,
+      "stack_blocks": 12.67,
+      "wall_cupboard_close": 66.67,
+      "wall_cupboard_open": 33.33
+     },
+     "cost": {
+      "core": 40.33,
+      "ext": 66.04
+     }
+    }
+   ]
+  },
+  {
+   "id": "kimi",
+   "name": "Kimi K3.1 Pro",
+   "maker": "kimi",
+   "harness": "Claude Code 2.1.280",
+   "efforts": [
+    {
+     "effort": "max",
+     "tested": "2026-10-26",
+     "per": {
+      "dishwasher_close": 0.0,
+      "dishwasher_load_cups": 1.33,
+      "drawer_top_close": 56.33,
+      "drawer_top_open": 33.33,
+      "move_plate": 0.0,
+      "move_two_plates": 0.0,
+      "pick_box": 0.0,
+      "reach_target_dual": 18.33,
+      "reach_target_multi_modal": 82.0,
+      "dishwasher_load_cutlery": 1.0,
+      "dishwasher_load_plates": 0.0,
+      "flip_cup": 5.33,
+      "flip_cutlery": 0.0,
+      "put_cups": 0.0,
+      "reach_target_single": 71.33,
+      "sandwich_remove": 0.0,
+      "saucepan_to_hob": 0.0,
+      "stack_blocks": 0.0,
+      "wall_cupboard_close": 66.67,
+      "wall_cupboard_open": 33.33
+     },
+     "cost": {
+      "core": 329.24,
+      "ext": 554.49
+     }
+    }
+   ]
+  },
+  {
+   "id": "haiku",
+   "name": "Claude Haiku 5.5",
+   "maker": "claude",
+   "harness": "Claude Code 2.1.310",
+   "efforts": [
+    {
+     "effort": "max",
+     "tested": "2026-10-30",
+     "per": {
+      "dishwasher_close": 0.0,
+      "dishwasher_load_cups": 0.0,
+      "drawer_top_close": 0.0,
+      "drawer_top_open": 2.67,
+      "move_plate": 0.0,
+      "move_two_plates": 0.0,
+      "pick_box": 0.0,
+      "reach_target_dual": 13.33,
+      "reach_target_multi_modal": 58.67,
+      "dishwasher_load_cutlery": 0.0,
+      "dishwasher_load_plates": 0.0,
+      "flip_cup": 0.0,
+      "flip_cutlery": 0.0,
+      "put_cups": 0.0,
+      "reach_target_single": 40.67,
+      "sandwich_remove": 0.0,
+      "saucepan_to_hob": 0.0,
+      "stack_blocks": 0.0,
+      "wall_cupboard_close": 0.0,
+      "wall_cupboard_open": 0.0
+     },
+     "cost": {
+      "core": 90.78,
+      "ext": 98.09
+     }
+    }
+   ]
+  },
+  {
+   "id": "sonnet",
+   "name": "Claude Sonnet 5.5",
+   "maker": "claude",
+   "harness": "Claude Code 2.1.310",
+   "efforts": [
+    {
+     "effort": "max",
+     "tested": "2026-10-31",
+     "per": {
+      "dishwasher_close": 0.0,
+      "dishwasher_load_cups": 0.33,
+      "drawer_top_close": 100.0,
+      "drawer_top_open": 100.0,
+      "move_plate": 54.0,
+      "move_two_plates": 44.0,
+      "pick_box": 54.0,
+      "reach_target_dual": 96.67,
+      "reach_target_multi_modal": 100.0
+     },
+     "cost": {
+      "core": 709.74,
+      "ext": null
+     }
+    }
+   ]
+  },
+  {
+   "id": "deepseek",
+   "name": "DeepSeek V4.1 Flash (1017)",
+   "maker": "deepseek",
+   "harness": "DeepSeek CLI 0.2.1-rc.2",
+   "efforts": [
+    {
+     "effort": "max",
+     "tested": "2026-10-24",
+     "per": {
+      "dishwasher_close": 0.0,
+      "dishwasher_load_cups": 0.0,
+      "drawer_top_close": 96.33,
+      "drawer_top_open": 0.0,
+      "move_plate": 0.0,
+      "move_two_plates": 0.0,
+      "pick_box": 0.0,
+      "reach_target_dual": 18.33,
+      "reach_target_multi_modal": 3.67,
+      "dishwasher_load_cutlery": 0.0,
+      "dishwasher_load_plates": 0.0,
+      "flip_cup": 0.0,
+      "flip_cutlery": 0.0,
+      "put_cups": 0.0,
+      "reach_target_single": 60.33,
+      "sandwich_remove": 0.0,
+      "saucepan_to_hob": 0.0,
+      "stack_blocks": 0.0,
+      "wall_cupboard_close": 33.33,
+      "wall_cupboard_open": 0.0
+     },
+     "cost": {
+      "core": 17.28,
+      "ext": 23.02
+     }
+    }
+   ]
+  }
+ ]
+}

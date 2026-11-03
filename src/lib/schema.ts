@@ -199,6 +199,30 @@ const usage = z.object({
   out_k: z.number().positive(),
 });
 
+// The live coding-agent leaderboard (board.json, written by site_board.py from the scored sessions):
+// one entry per model, one effort per run of it, per-task mean success over its sessions and
+// what they cost at list price on the core and extended task sets (null: that set not run).
+export const board = z.object({
+  updated: z.string(),
+  sessions_per_task: z.number().int().positive(),
+  budget_steps: z.number().int().positive(),
+  core: z.array(z.string()).min(1),
+  extended: z.array(z.string()),
+  fixed_start: z.array(z.string()),
+  models: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    maker: z.enum(['claude', 'openai', 'kimi', 'deepseek']),
+    harness: z.string(),
+    efforts: z.array(z.object({
+      effort: z.enum(['low', 'medium', 'high', 'xhigh', 'max']),
+      tested: z.string(),
+      per: z.record(z.string(), z.number()),
+      cost: z.object({ core: z.number(), ext: z.number().nullable() }),
+    })).min(1),
+  })).min(1),
+});
+
 export const compute = z.object({
   budget_steps: z.number().int().positive(),
   sessions_per_task: z.number().int().positive(),

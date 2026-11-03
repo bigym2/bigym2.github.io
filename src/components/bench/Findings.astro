@@ -1,0 +1,42 @@
+---
+// What reading the final programs showed, one claim per agent with its evidence.
+import { board } from '../../lib/data';
+
+const terra = board.models.find((m) => m.id === 'terra')!;
+const coreMean = (e: (typeof terra.efforts)[number]) => board.core.reduce((s, t) => s + e.per[t], 0) / board.core.length;
+const hi = terra.efforts.find((e) => e.effort === 'high'), mx = terra.efforts.find((e) => e.effort === 'max');
+const finds = [
+  { s: 'opus', who: 'Claude Opus 5.5', claim: 'It remembers the robot.', body: '21 of its 27 core programs solve inverse kinematics with arm offsets it never measured, equal to the model file’s.', fig: '0.10022 · 0.24778 · 0.1032 · 0.080518 m' },
+  { s: 'astra', who: 'Claude Opus 5.5 · GPT-6 Astra', claim: 'But the public G1, not this one.', body: 'Both write 0.046 m for the last wrist link. The G1 here has 0.051 m, a value no session ever saw.', fig: 'remembered 0.046 m · simulated 0.051 m' },
+  { s: 'astra', who: 'GPT-6 Astra', claim: 'It works from pixels.', body: '24 of its 27 core programs servo on wrist-camera pixel errors with scripted poses. The 4 of 60 that use its remembered arm geometry score 0–15%.', fig: '' },
+  ...(hi && mx ? [{ s: 'terra', who: 'GPT-6.1 Terra', claim: 'At high effort it stops early.', body: `Its sessions last 16 minutes against GPT-6.1 Sol’s 46. At max effort its core score goes from ${coreMean(hi).toFixed(1)}% to ${coreMean(mx).toFixed(1)}%.`, fig: '' }] : []),
+];
+---
+<section class="finds" id="findings">
+  <div class="wrap">
+    <h2>What the programs show</h2>
+    <p class="sub">From reading all 420 final programs.</p>
+    <div class="grid">
+      {finds.map((f) => (
+        <article style={`--c: var(--series-${f.s})`}>
+          <span class="who">{f.who}</span>
+          <b>{f.claim}</b>
+          <p>{f.body}</p>
+          {f.fig && <code>{f.fig}</code>}
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .finds { padding-block: 3.5rem; border-top: 1px solid var(--rule); }
+  h2 { margin: 0; font-family: var(--serif); font-weight: 600; font-size: clamp(1.8rem, 3.2vw, 2.2rem); }
+  .sub { margin: 0.4rem 0 1.6rem; color: var(--ink-2); font-family: var(--sans); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1.8rem 2.2rem; }
+  article { display: grid; gap: 0.5rem; align-content: start; border-top: 2px solid var(--c); padding-top: 0.9rem; }
+  .who { font: 600 0.78rem var(--sans); color: var(--ink-3); }
+  b { font-family: var(--serif); font-size: 1.35rem; font-weight: 600; line-height: 1.2; }
+  p { margin: 0; color: var(--ink-2); font: 0.95rem/1.5 var(--sans); }
+  code { font: 0.78rem var(--mono); color: var(--ink); }
+</style>

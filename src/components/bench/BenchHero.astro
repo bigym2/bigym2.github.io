@@ -1,0 +1,143 @@
+---
+// Opening of the benchmark page: the paper's title over the hero film (task clips, then the G1 and
+// Michelangelo's Adam reaching for each other), drawn through the ordered-dither effect across the whole band;
+// who made it (the BiGym mark, the authors, Imperial's wordmark: at first sight a university's project, not a
+// company's); what the board measures; where the paper, code, data and docs are. A moving pointer scatters the film's
+// pixels for a moment. With ?fx in the URL a panel opens below to tune the effect.
+import { board, site, media, asset } from '../../lib/data';
+import Icon from '../Icon.astro';
+import FxPanel from './FxPanel.astro';
+import ThemeToggle from '../ThemeToggle.astro';
+import Logo from '../Logo.astro';
+
+// Each site's own logo (public/logos/links/, sources in SOURCES.md): arXiv's primary logo; GitHub's mark (black
+// or white by theme) and Hugging Face's beside their names in our type; Docs keeps our book icon.
+const url = (kind: string) => site.links.find((l) => l.kind === kind)?.url;
+const tiles = [
+  { kind: 'arxiv', label: 'Paper on arXiv' },
+  { kind: 'github', label: 'Code on GitHub' },
+  { kind: 'huggingface', label: 'Data on Hugging Face' },
+  { kind: 'docs', label: 'Docs' },
+].map((t) => ({ ...t, url: url(t.kind) })).filter((t) => t.url);
+const updated = new Date(`${board.updated}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+// each clip rendered twice, over a light ground and over a dark one (public/media/hero/dark/)
+const clips = Object.fromEntries(['plate', 'cup', 'cupboard', 'blocks', 'reach', 'dishwasher', 'contact'].map((c) => [c, { light: media(`hero/${c}.mp4`), dark: media(`hero/dark/${c}.mp4`) }]));
+---
+<header class="hero" id="top">
+  <div class="stage" data-film data-clips={JSON.stringify(clips)}>
+    <video class="seqv" muted playsinline preload="auto" aria-hidden="true"></video>
+    <video class="seqv" muted playsinline preload="auto" aria-hidden="true"></video>
+    <canvas aria-hidden="true"></canvas>
+  </div>
+  <div class="toggle"><ThemeToggle /></div>
+  <div class="wrap over">
+    <p class="topline"><span class="brand" role="img" aria-label="BiGym"><Logo size={24} /></span><span class="updated">Updated {updated}</span></p>
+    <div class="titleblock">
+      <h1><span class="name">{site.title}</span><span class="sub">{site.subtitle}</span></h1>
+      <ul class="authors">
+        {site.authors.map((a) => <li>{a.url ? <a href={a.url} target="_blank" rel="noopener">{a.name}</a> : a.name}</li>)}
+        <li class="org"><img src={asset('/logos/imperial.png')} alt="Imperial College London" class="imperial" width="1200" height="132" /></li>
+      </ul>
+    </div>
+    <p class="lead">BiGym 2.0 evaluates AI agents on their ability to control a humanoid robot. For each household task, an agent watches one demonstration and writes the program that drives a Unitree G1. Its score is the share of hidden episodes that program completes.</p>
+    <nav class="tiles" aria-label="Paper, code, data and docs">
+      {tiles.map((t) => (
+        <a href={t.url} target={t.kind === 'docs' ? undefined : '_blank'} rel={t.kind === 'docs' ? undefined : 'noopener'} aria-label={t.label} class={t.kind}>
+          {t.kind === 'arxiv' && <img src={asset('/logos/links/arxiv.svg')} alt="" class="arxiv-logo" />}
+          {t.kind === 'github' && <><img src={asset('/logos/links/github-mark-black.svg')} alt="" class="gh on-light" /><img src={asset('/logos/links/github-mark-white.svg')} alt="" class="gh on-dark" /><span>GitHub</span></>}
+          {t.kind === 'huggingface' && <><img src={asset('/logos/links/hf-mark.svg')} alt="" class="hf-mark" /><span>Hugging Face</span></>}
+          {t.kind === 'docs' && <><Icon name="book" size={22} /><span>Docs</span></>}
+        </a>
+      ))}
+    </nav>
+  </div>
+</header>
+<FxPanel />
+
+<script>
+  import { Sequence } from '../../lib/fx/sequence';
+  import { mountPanel } from '../../lib/fx/panel';
+  const stage = document.querySelector<HTMLElement>('[data-film]')!;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isDark = () => document.documentElement.dataset.theme === 'dark';
+  const seq = new Sequence([...stage.querySelectorAll('video')], stage.querySelector('canvas')!, JSON.parse(stage.dataset.clips!), reduce, isDark());
+  const layer = seq.layer;
+  new MutationObserver(() => seq.setDark(isDark())).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  document.fonts?.ready.then(() => layer.request());
+  // a moving pointer anywhere over the hero scatters the film's pixels near it
+  if (!reduce) {
+    const hero = document.getElementById('top')!, canvas = stage.querySelector('canvas')!;
+    hero.addEventListener('pointermove', (e) => {
+      const b = canvas.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top;
+      if (x < 0 || y < 0 || x > b.width || y > b.height) { layer.ptr.on = false; return; }
+      layer.pointer(x, y);
+    });
+    hero.addEventListener('pointerleave', () => { layer.ptr.on = false; });
+  }
+  if (new URLSearchParams(location.search).has('fx')) {
+    const panel = document.getElementById('fx-panel');
+    if (panel) {
+      panel.hidden = false;
+      const crop = () => { const c = document.createElement('canvas'); c.width = c.height = 44; c.getContext('2d')!.fillStyle = '#ddd'; c.getContext('2d')!.fillRect(0, 0, 44, 44); return c.toDataURL(); };
+      mountPanel(panel, layer, crop);
+    }
+  }
+</script>
+
+<style>
+  /* Geist Serif (Vercel, SIL OFL 1.1; geist 1.9.0 on npm, licence beside the file): only the Regular weight is out */
+  @font-face { font-family: 'Geist Serif'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/geist-serif-regular.woff2') format('woff2'); }
+  .hero { position: relative; overflow: hidden; border-bottom: 1px solid var(--rule); background: var(--paper);
+    --stageh: clamp(30rem, 41.667vw, 50rem); }
+  /* the film fills the whole band; the title and text sit over it */
+  .stage { position: absolute; inset: 0; height: var(--stageh); }
+  .toggle { position: absolute; z-index: 3; top: calc(0.9rem + env(safe-area-inset-top, 0px)); right: var(--gutter); }
+  .stage video, .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* the videos are only the effect's source: the canvas is opaque from the start, so the raw film never shows */
+  .stage canvas { background: var(--paper); }
+  .over { position: relative; z-index: 2; min-height: var(--stageh); display: grid; align-content: space-between; gap: 1rem; padding-block: calc(var(--stageh) * 0.07) calc(var(--stageh) * 0.065); pointer-events: none; }
+  .over > * { pointer-events: auto; max-width: 38rem; }
+  .topline { margin: 0; display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; font: 0.95rem var(--sans); color: var(--ink-3); }
+  .brand { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
+  .brand :global(.logo) { flex: none; }
+  .updated { padding-left: 0.9rem; border-left: 1px solid var(--rule-strong); }
+  /* the author line (names and the wordmark) runs a little wider than the title, so it stays on one line */
+  .over > .titleblock { display: grid; gap: 0.9rem; max-width: 46rem; }
+  .titleblock h1 { max-width: 38rem; }
+  .authors { margin: 0.35rem 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 1.1rem; font: 500 1rem var(--sans); color: var(--ink); }
+  .authors a { color: inherit; text-decoration: underline; text-decoration-color: var(--rule-strong); text-underline-offset: 0.2em; }
+  .authors a:hover { text-decoration-color: currentColor; }
+  /* Imperial's wordmark closes the author line, in the text's colour (black, or white on dark) rather than its blue */
+  .org { display: flex; align-items: center; padding-left: 1.1rem; border-left: 1px solid var(--rule-strong); }
+  .imperial { height: 0.72rem; width: auto; display: block; filter: brightness(0); opacity: 0.86; }
+  :global(:root[data-theme='dark']) .imperial { filter: brightness(0) invert(1); opacity: 0.9; }
+  h1 { margin: 0; display: grid; gap: 0.35rem; position: relative; }
+  .name { font: 400 calc(var(--stageh) * 0.15)/0.95 'Geist Serif', 'STIX Two Text Variable', Georgia, serif; letter-spacing: -0.03em; white-space: nowrap; }
+  .sub { font: 400 calc(var(--stageh) * 0.046)/1.2 'Geist Serif', 'STIX Two Text Variable', Georgia, serif; letter-spacing: -0.01em; color: var(--ink-2); text-wrap: balance; }
+  .lead { margin: 0; font: 1rem/1.6 var(--sans); color: var(--ink-2); }
+  .tiles { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+  .tiles a {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.55rem;
+    height: 3.2rem; padding: 0 1.15rem; border-radius: 12px;
+    background: color-mix(in oklch, var(--paper-2) 88%, transparent); border: 1px solid var(--rule); backdrop-filter: blur(4px);
+    color: var(--ink); font: 700 0.98rem var(--sans); text-decoration: none; transition: background-color 140ms;
+  }
+  .tiles :global(svg) { width: 1.35rem; height: 1.35rem; flex: none; }
+  .tiles img { display: block; flex: none; }
+  .arxiv-logo { height: 26px; width: auto; }
+  .gh { height: 22px; width: 22px; }
+  .hf-mark { height: 24px; width: 24px; }
+  .tiles .huggingface span, .tiles .github span { font-weight: 700; letter-spacing: -0.01em; }
+  .on-dark { display: none !important; }
+  :global(:root[data-theme='dark']) .on-dark { display: block !important; }
+  :global(:root[data-theme='dark']) .on-light { display: none !important; }
+  .tiles a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (hover: hover) { .tiles a:hover { background: var(--paper-3); } }
+  @media (max-width: 760px) {
+    .hero { --stageh: 22rem; }
+    .over { min-height: 0; padding-top: calc(var(--stageh) * 0.08); }
+    /* the title block fills the film's band (padding and top line taken off), so the text below starts under it */
+    .titleblock { min-height: calc(var(--stageh) * 0.92 - 2.6rem); align-content: start; }
+    .lead { margin-top: 0.4rem; }
+  }
+</style>

@@ -1,0 +1,172 @@
+---
+// The twenty tasks as one ring: a slice per task, the four scenes as named arcs on the rim. The
+// hub says what the ring is; pointing at a task plays its human VR demonstration there and names
+// it underneath. Nothing moves until the reader points. Holding a task down replays its demonstration from the
+// start, fast enough to finish in about 5 s (its length / 5, at least 2x, at most 4x), until released. `only` keeps the tasks of one task set
+// (the board's switch shows one dial per set); `uid` keeps each dial's SVG ids apart.
+import { media } from '../../lib/data';
+import { scenes as allScenes } from '../../lib/board';
+
+interface Props { only?: string[]; uid?: string; view?: string; hidden?: boolean }
+const { only, uid = 'd', view, hidden = false } = Astro.props;
+const keep = only ? new Set(only) : null;
+const scenes = allScenes.map((s) => ({ ...s, tasks: s.tasks.filter((t) => !keep || keep.has(t.id)) })).filter((s) => s.tasks.length);
+
+const S = 700, C = S / 2, R0 = 206, R1 = 304, RIM = 316, LAB = 333, GAP = 0.012;
+const ordered = scenes.flatMap((s) => s.tasks.map((t) => ({ ...t, sceneLabel: s.label })));
+const step = (Math.PI * 2) / ordered.length;
+const P = (r: number, a: number) => [C + r * Math.cos(a - Math.PI / 2), C + r * Math.sin(a - Math.PI / 2)] as const;
+const f = (n: number) => n.toFixed(2);
+const slices = ordered.map((t, i) => {
+  const a0 = i * step + GAP, a1 = (i + 1) * step - GAP;
+  const [x0, y0] = P(R1, a0), [x1, y1] = P(R1, a1), [x2, y2] = P(R0, a1), [x3, y3] = P(R0, a0);
+  const d = `M${f(x0)} ${f(y0)}A${R1} ${R1} 0 0 1 ${f(x1)} ${f(y1)}L${f(x2)} ${f(y2)}A${R0} ${R0} 0 0 0 ${f(x3)} ${f(y3)}Z`;
+  const [mx, my] = P((R0 + R1) / 2, (a0 + a1) / 2);
+  return { t, i, d, ix: mx - 100, iy: my - 100 };
+});
+// Scene arcs, and their names along a slightly larger arc; on the lower half the name's path runs
+// the other way so it reads left to right.
+let k = 0;
+const arcs = scenes.map((s) => {
+  const a0 = k * step + 0.02, a1 = (k + s.tasks.length) * step - 0.02;
+  k += s.tasks.length;
+  const big = a1 - a0 > Math.PI ? 1 : 0;
+  const [x0, y0] = P(RIM, a0), [x1, y1] = P(RIM, a1);
+  const mid = (a0 + a1) / 2, lower = mid > Math.PI / 2 && mid < (3 * Math.PI) / 2;
+  const [l0x, l0y] = P(LAB, lower ? a1 : a0), [l1x, l1y] = P(LAB, lower ? a0 : a1);
+  return {
+    id: s.id, label: s.label, n: s.tasks.length, lower,
+    d: `M${f(x0)} ${f(y0)}A${RIM} ${RIM} 0 ${big} 1 ${f(x1)} ${f(y1)}`,
+    ld: `M${f(l0x)} ${f(l0y)}A${LAB} ${LAB} 0 ${big} ${lower ? 0 : 1} ${f(l1x)} ${f(l1y)}`,
+  };
+});
+const idle = 'Point at a task to watch its demonstration.';
+---
+<figure class="dialfig" data-dial data-view={view} hidden={hidden}>
+  <div class="dial">
+    <svg viewBox={`0 0 ${S} ${S}`} role="group" aria-label={`The ${ordered.length} tasks, by scene`}>
+      <defs>
+        {slices.map((s) => <clipPath id={`${uid}tw${s.i}`}><path d={s.d} /></clipPath>)}
+        {arcs.map((a) => <path id={`${uid}tl-${a.id}`} d={a.ld} />)}
+      </defs>
+      {slices.map((s) => (
+        <g class="slice" tabindex="0" role="button" data-i={s.i} aria-label={`${s.t.name}: ${s.t.instruction}`}>
+          <image href={media(s.t.image)} x={f(s.ix)} y={f(s.iy)} width="200" height="200" preserveAspectRatio="xMidYMid slice" clip-path={`url(#${uid}tw${s.i})`} />
+          <path class="edge" d={s.d} />
+        </g>
+      ))}
+      {arcs.map((a) => (
+        <>
+          <path class="rim" style={`--sc: var(--scene-${a.id})`} d={a.d} />
+          <text class="rl" style={`--sc: var(--scene-${a.id})`} dy={a.lower ? 14 : -2}><textPath href={`#${uid}tl-${a.id}`} startOffset="50%" text-anchor="middle">{a.label} · {a.n}</textPath></text>
+        </>
+      ))}
+      <circle class="hub" cx={C} cy={C} r={R0 - 8} />
+      <text class="hubn" x={C} y={C + 12} text-anchor="middle">{ordered.length}</text>
+      <text class="hubl" x={C} y={C + 52} text-anchor="middle">{only ? (ordered.length === 9 ? 'core tasks' : 'extended tasks') : 'household tasks'}</text>
+    </svg>
+    <div class="lens" aria-hidden="true"><video class="demo" muted loop playsinline preload="none" /></div>
+    <span class="hint" aria-hidden="true">Hold to speed up</span>
+  </div>
+  <figcaption data-cap>{idle}</figcaption>
+  <script type="application/json" data-tasks set:html={JSON.stringify(ordered.map((t) => ({ name: t.name, scene: t.sceneLabel, group: t.group, instruction: t.instruction, video: media(t.demo!.video), poster: media(t.demo!.poster) })))} />
+  <span hidden data-idle>{idle}</span>
+</figure>
+
+<script>
+  for (const fig of document.querySelectorAll<HTMLElement>('[data-dial]')) {
+    const list = JSON.parse(fig.querySelector('[data-tasks]')!.textContent!);
+    const idle = fig.querySelector('[data-idle]')!.textContent!;
+    const video = fig.querySelector<HTMLVideoElement>('video')!;
+    const cap = fig.querySelector<HTMLElement>('[data-cap]')!;
+    const slices = [...fig.querySelectorAll<SVGGElement>('.slice')];
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const show = (i: number) => {
+      const t = list[i];
+      slices.forEach((s, j) => s.classList.toggle('on', j === i));
+      cap.innerHTML = `<span class="sc" style="--sc: var(--scene-${t.group})">${t.scene}</span> <b>${t.name}</b> ${t.instruction}`;
+      video.poster = t.poster;
+      if (!video.src.endsWith(t.video)) video.src = t.video;
+      fig.classList.add('playing');
+      if (!reduce) video.play().catch(() => {});
+    };
+    const clear = () => {
+      slices.forEach((s) => s.classList.remove('on'));
+      cap.textContent = idle;
+      fig.classList.remove('playing');
+      video.pause();
+    };
+    // press and hold: whole demonstration in about 5 s
+    let holdTimer = 0, fast = false;
+    const rateFor = (d: number) => Math.min(4, Math.max(2, d / 5));
+    const fastOn = (i: number) => {
+      show(i);
+      const go = () => {
+        fast = true;
+        const r = rateFor(video.duration || 10);
+        video.currentTime = 0; video.playbackRate = r;
+        if (!reduce) video.play().catch(() => {});
+        cap.insertAdjacentHTML('beforeend', ` <span class="rate">×${r.toFixed(1)}</span>`);
+      };
+      if (video.readyState >= 1) go(); else video.addEventListener('loadedmetadata', go, { once: true });
+    };
+    const fastOff = () => {
+      clearTimeout(holdTimer);
+      if (!fast) return;
+      fast = false; video.playbackRate = 1;
+      cap.querySelector('.rate')?.remove();
+    };
+    // the first time a task is pointed at during this visit, the hub says it can be held down
+    const hint = fig.querySelector<HTMLElement>('.hint')!;
+    if (matchMedia('(hover: none)').matches) hint.textContent = 'Press and hold to speed up';
+    const hintOnce = () => {
+      const w = window as unknown as { __dialHinted?: boolean };
+      if (w.__dialHinted) return;
+      w.__dialHinted = true;
+      hint.classList.add('on');
+      window.setTimeout(() => hint.classList.remove('on'), 1300);
+    };
+    slices.forEach((s, i) => {
+      s.addEventListener('pointerenter', () => { show(i); hintOnce(); });
+      s.addEventListener('focus', () => show(i));
+      s.addEventListener('blur', clear);
+      s.addEventListener('pointerdown', () => { clearTimeout(holdTimer); holdTimer = window.setTimeout(() => fastOn(i), 250); });
+      s.addEventListener('pointerup', fastOff);
+      s.addEventListener('pointerleave', fastOff);
+      s.addEventListener('pointercancel', fastOff);
+      s.addEventListener('contextmenu', (e) => e.preventDefault());  // a long press on touch screens
+    });
+    fig.querySelector('svg')!.addEventListener('pointerleave', clear);
+  }
+</script>
+
+<style>
+  .dialfig { margin: 0; display: grid; gap: 0.6rem; justify-items: center; }
+  .dial { position: relative; width: 100%; max-width: 34rem; }
+  svg { display: block; width: 100%; height: auto; }
+  .slice { cursor: pointer; outline: none; transition: opacity 200ms; }
+  .slice .edge { fill: none; stroke: var(--paper); stroke-width: 1.5; }
+  .slice.on .edge { stroke: var(--ink); stroke-width: 3; }
+  .slice:focus-visible .edge { stroke: var(--accent); stroke-width: 3; }
+  svg:hover .slice:not(:hover) { opacity: 0.5; }
+  .rim { fill: none; stroke: var(--sc); stroke-width: 9; stroke-linecap: round; }
+  .rl { fill: var(--sc); font: 700 15px var(--sans); letter-spacing: 0.02em; }
+  .hub { fill: var(--paper-2); }
+  .hubn { font: 600 96px var(--serif); fill: var(--ink); }
+  .hubl { font: 500 22px var(--sans); fill: var(--ink-3); }
+  /* the hub is r = 198 of 700; while a task is pointed at, its demonstration fills it, zoomed in on the robot */
+  .lens { position: absolute; left: 50%; top: 50%; width: 56.6%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; overflow: hidden; background: #111;
+    opacity: 0; transition: opacity 180ms; pointer-events: none; }
+  .demo { width: 100%; height: 100%; object-fit: cover; transform: scale(1.35); display: block; }
+  .dialfig.playing .lens { opacity: 1; }
+  .hint { position: absolute; left: 50%; top: 50%; z-index: 2; transform: translate(-50%, -50%) scale(0.96); padding: 0.45rem 0.85rem; border-radius: 999px;
+    background: rgb(15 17 20 / 0.8); color: #fff; font: 600 0.82rem var(--sans); white-space: nowrap; pointer-events: none;
+    opacity: 0; transition: opacity 180ms, transform 180ms; }
+  .hint.on { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  @media (prefers-reduced-motion: reduce) { .hint { transition: none; } }
+  figcaption { min-height: 2.8em; max-width: 30rem; text-align: center; font: 0.95rem/1.45 var(--sans); color: var(--ink-2); }
+  figcaption :global(.sc) { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sc); }
+  figcaption :global(b) { color: var(--ink); font-weight: 600; }
+  figcaption :global(.rate) { font: 600 0.78rem var(--sans); font-variant-numeric: tabular-nums; color: var(--accent-ink); margin-left: 0.3rem; }
+  .slice { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+</style>

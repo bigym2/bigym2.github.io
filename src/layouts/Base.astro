@@ -5,8 +5,9 @@ import { site, asset } from '../lib/data';
 // `embed` serves a bare page meant to sit in another site's frame: kept out of
 // search, canonical to the project page, theme taken from `?theme=`.
 // `title` names a sub-page; the tab and the social card then read "<title> · <site>".
-interface Props { embed?: boolean; title?: string }
-const { embed = false, title } = Astro.props;
+// `redirect` sends the page on to another URL (an old address that posts link to).
+interface Props { embed?: boolean; title?: string; redirect?: string }
+const { embed = false, title, redirect } = Astro.props;
 
 const pageTitle = title ? `${title} · ${site.title}` : `${site.title}: ${site.subtitle}`;
 const canonical = Astro.site ? new URL(embed ? asset('/') : Astro.url.pathname, Astro.site).href : undefined;
@@ -20,6 +21,7 @@ const ogImage = Astro.site ? new URL(asset('/og.png'), Astro.site).href : undefi
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{pageTitle}</title>
     <meta name="description" content={site.description} />
+    {redirect && <meta http-equiv="refresh" content={`0; url=${redirect}`} />}
     {embed && <meta name="robots" content="noindex" />}
     {canonical && <link rel="canonical" href={canonical} />}
     <meta property="og:type" content="website" />

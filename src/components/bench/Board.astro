@@ -1,0 +1,328 @@
+---
+// The live coding-agent leaderboard: a bar per model and reasoning effort, best first, each in
+// its agent's series colour; under it every task's success, grouped by scene; then success
+// against cost per session, with a model's efforts joined by an arrow from the lower to the
+// higher. All three task sets are laid out at build time; the switch shows one.
+import { board } from '../../lib/data';
+import { VIEWS, entries, sceneColumns, rows, missing, chart, CHART, nameLines } from '../../lib/board';
+import Dial from './Dial.astro';
+import { makerMarks, type Maker } from '../../lib/makerMarks';
+
+const views = VIEWS.map((v) => {
+  const es = entries(v.id);
+  const top = Math.max(...es.map((e) => e.score));
+  const scale = Math.ceil((top + 6) / 20) * 20;
+  return { ...v, es, scale, cols: sceneColumns(v.id), ch: chart(rows(v.id)), left: missing(v.id) };
+});
+const usd = (c: number) => (c < 10 ? `$${c.toFixed(2)}` : `$${c.toFixed(1)}`);
+const mark = (m: string) => makerMarks[m as Maker];
+---
+<section class="board" id="board">
+  <div class="wrap wide">
+    <header class="head">
+      <div>
+        <h2>Leaderboard</h2>
+        <p>Mean success over <span data-which>all 20 tasks</span>, {board.sessions_per_task} independent sessions per task, 100 hidden episodes per final program.</p>
+      </div>
+      <div class="seg" role="group" aria-label="Task set">
+        {VIEWS.map((v) => <button type="button" data-set={v.id} data-lede={v.lede} aria-pressed={v.id === 'all' ? 'true' : 'false'}>{v.label}</button>)}
+      </div>
+    </header>
+
+    <div class="top">
+      <div class="barcol">
+      {views.map((v) => (
+      <div class="view" data-view={v.id} hidden={v.id !== 'all'}>
+        <div class="scroll">
+          <div class="chart" style={`--n: ${v.es.length}`}>
+            <div class="plot">
+              {Array.from({ length: v.scale / 20 + 1 }, (_, i) => <span class="gl" style={`bottom: ${(i * 20 / v.scale) * 100}%`}><i>{i * 20}%</i></span>)}
+              <div class="cols">
+                {v.es.map((e) => (
+                  <div class:list={['col', { short: e.score / v.scale < 0.1 }]} tabindex="0" data-s={e.learned ? 'learned' : e.id}
+                    style={`--c: ${e.learned ? 'var(--bar)' : `var(--series-${e.id})`}; --h: ${(e.score / v.scale) * 100}%`}
+                    aria-label={`${e.name}${e.effort ? ` (${e.effort})` : ''}: ${e.score.toFixed(1)}%`}>
+                    <span class="tip"><b>{e.name}</b><span>{e.learned ? e.kind : e.harness.replace(/\s+v?[0-9][\w.-]*$/, '')}</span></span>
+                    <span class="bar"><b class="val">{e.score.toFixed(1)}</b></span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div class="names">
+              {v.es.map((e) => (
+                <div class="nm">
+                  {e.maker ? <svg viewBox={mark(e.maker).box} aria-hidden="true"><path d={mark(e.maker).d} fill={mark(e.maker).fill} fill-rule="evenodd" /></svg> : <span class="mono" aria-hidden="true" />}
+                  <b>{nameLines(e.id, e.name, e.kind)[0]}{!e.learned && <><br />{nameLines(e.id, e.name)[1]}</>}</b>
+                  {e.effort ? <span class="eff" style={`--c: var(--series-${e.id})`}>{e.effort}</span> : <span class="kind">{e.kind}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        {v.left.length > 0 && <p class="left">Not shown in this view: {v.left.join('; ')}.</p>}
+      </div>
+      ))}
+      </div>
+      <div class="dials">
+        <Dial uid="all" view="all" />
+        <Dial uid="core" view="core" only={board.core} hidden />
+        <Dial uid="ext" view="ext" only={board.extended} hidden />
+      </div>
+    </div>
+
+    {views.map((v) => (
+      <div class="view" data-view={v.id} hidden={v.id !== 'all'}>
+        <h3>Success by task</h3>
+        <div class="ptrow">
+        <div class="scroll">
+          <table class="pt">
+            <thead>
+              <tr class="sc">
+                <th />
+                {v.cols.map((s) => <th colspan={s.tasks.length} style={`--sc: var(--scene-${s.id})`}><span>{s.label}</span></th>)}
+                <th />
+              </tr>
+              <tr class="tk">
+                <th />
+                {v.cols.flatMap((s) => s.tasks.map((t) => <th title={t.instruction}><span>{t.name}</span></th>))}
+                <th class="mean"><span>mean</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {v.es.map((e) => (
+                <tr>
+                  <th scope="row" class:list={{ lp: e.learned }}>{e.name}{e.several && <small> · {e.effort}</small>}{e.learned && <small> · {e.kind}</small>}</th>
+                  {e.values.map((x) => <td style={`--p: ${Math.round(x.v)}%`} class:list={{ hi: x.v >= 55 }} title={`${x.task}: ${x.v.toFixed(1)}%`}>{Math.round(x.v)}</td>)}
+                  <td class="mean">{e.score.toFixed(1)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div class="dslot" data-dslot={v.id} />
+        </div>
+
+        <h3>A score is a point on a cost curve</h3>
+        <p class="sub">Mean success against what one session costs at list price, log scale. A model run at several efforts is one line through its points.</p>
+        <div class="scroll costwrap" data-costchart>
+          <svg class="cost-chart" viewBox={`0 0 ${CHART.W} ${CHART.H}`} role="img" aria-label={`Mean success against cost per session, ${v.lede}`} data-x0={v.ch.x0} data-axis={v.ch.axisY}>
+            {v.ch.yticks.map((t) => <><line class="grid" x1={v.ch.x0} x2={v.ch.x1} y1={t.y} y2={t.y} /><text class="tick" x={v.ch.x0 - 10} y={t.y + 4} text-anchor="end">{t.label}</text></>)}
+            {v.ch.xticks.map((t) => <><line class="grid dash" x1={t.x} x2={t.x} y1={v.ch.y0} y2={v.ch.axisY} /><text class="tick" x={t.x} y={v.ch.axisY + 20} text-anchor="middle">{t.label}</text></>)}
+            <text class="axis" x={(v.ch.x0 + v.ch.x1) / 2} y={CHART.H - 8} text-anchor="middle">Cost per session, US$</text>
+            {v.ch.labels.map((l) => <text class="lab" data-id={l.id} style={`--c: var(--series-${l.id})`} x={l.lx} y={l.ly} text-anchor={l.anchor}>{l.text}</text>)}
+            {[...new Set(v.ch.dots.map((d) => d.id))].map((id) => (
+              <g class="series" data-id={id} style={`--c: var(--series-${id})`}>
+                {v.ch.arrows.filter((a) => a.id === id).map((a) => <line class="join" x1={a.x1} y1={a.y1} x2={a.x2} y2={a.y2} />)}
+                {v.ch.dots.filter((d) => d.id === id).map((d) => (
+                  <g class="hit" tabindex="0" data-name={d.name} data-effort={d.effort} data-score={d.score.toFixed(1)} data-cost={d.cost < 1 ? d.cost.toFixed(2) : d.cost.toFixed(1)}
+                    data-x={d.x.toFixed(1)} data-y={d.y.toFixed(1)} aria-label={`${d.name}, ${d.effort} effort: ${d.score.toFixed(1)}% at $${d.cost.toFixed(2)} per session`}>
+                    <circle class="zone" cx={d.x} cy={d.y} r="15" />
+                    <circle class="pt" cx={d.x} cy={d.y} r="6" />
+                  </g>
+                ))}
+              </g>
+            ))}
+            <g class="guide" aria-hidden="true">
+              <line class="gl-x" /><line class="gl-y" />
+              <rect class="rb-y" height="18" rx="3" /><text class="rd-y" text-anchor="end" />
+              <rect class="rb-x" height="18" rx="3" /><text class="rd-x" text-anchor="middle" />
+            </g>
+          </svg>
+          <div class="ctip" aria-hidden="true"><b><i></i><span class="n"></span></b><span class="e"></span></div>
+        </div>
+      </div>
+    ))}
+    <div class="fine">
+      <p>Each reasoning effort we ran is its own bar. On the 9 core tasks the learned policies of the paper join the board, trained on 60 demonstrations per task where an agent sees one; their numbers are the paper’s. Cost is every token of a session at the provider’s list price.</p>
+      <p>{board.fixed_start.join(', ')} start from the same state on every seed, so a program scores 0 or 100 on them. Randomised starts come with the next version of the board.</p>
+      <p>To add your model, email its results to <a href="mailto:jz5725@ic.ac.uk">jz5725@ic.ac.uk</a> (see <a href="#faq">Questions</a>).</p>
+    </div>
+  </div>
+</section>
+
+<script>
+  // The cost chart, as Artificial Analysis draws theirs: under the pointer (or keyboard focus) a point's model keeps
+  // its colour and the others fade to grey, dashed guides run from the point to both axes with its values read off
+  // there, and a small card names the model and the effort.
+  for (const wrap of document.querySelectorAll<HTMLElement>('[data-costchart]')) {
+    const svg = wrap.querySelector<SVGSVGElement>('svg')!, tip = wrap.querySelector<HTMLElement>('.ctip')!;
+    const guide = svg.querySelector<SVGGElement>('.guide')!, x0 = +svg.dataset.x0!, axis = +svg.dataset.axis!;
+    const q = <T extends Element>(c: string) => guide.querySelector<T>(c)!;
+    const set = (el: Element, a: Record<string, number | string>) => { for (const k in a) el.setAttribute(k, String(a[k])); };
+    const readout = (t: SVGTextElement, r: SVGRectElement, text: string, x: number, y: number) => {
+      t.textContent = text; set(t, { x, y });
+      const b = t.getBBox(); set(r, { x: b.x - 9, y: b.y - 2, width: b.width + 18, height: b.height + 4 });  // covers the tick label it lands on
+    };
+    const show = (g: SVGGElement) => {
+      const d = g.dataset, x = +d.x!, y = +d.y!, s = g.closest<SVGGElement>('.series')!, id = s.dataset.id;
+      wrap.classList.add('hovering');
+      svg.querySelectorAll<SVGElement>('.series, .lab').forEach((el) => el.classList.toggle('on', el.dataset.id === id));
+      svg.querySelectorAll('.hit.cur').forEach((h) => h.classList.remove('cur'));
+      g.classList.add('cur');
+      guide.setAttribute('style', s.getAttribute('style')!);
+      set(q('.gl-x'), { x1: x0, x2: x, y1: y, y2: y });
+      set(q('.gl-y'), { x1: x, x2: x, y1: y, y2: axis });
+      readout(q('.rd-y'), q('.rb-y'), `${d.score}%`, x0 - 10, y + 4);
+      readout(q('.rd-x'), q('.rb-x'), `$${d.cost}`, x, axis + 20);
+      tip.style.setProperty('--c', getComputedStyle(s).getPropertyValue('--c'));
+      tip.querySelector('.n')!.textContent = d.name!;
+      tip.querySelector('.e')!.textContent = `${d.effort![0].toUpperCase()}${d.effort!.slice(1)} effort`;
+      const pt = g.querySelector('.pt')!.getBoundingClientRect(), box = wrap.getBoundingClientRect();
+      const px = pt.left + pt.width / 2 - box.left + wrap.scrollLeft, py = pt.top + pt.height / 2 - box.top;
+      tip.classList.toggle('flip', px + 230 > wrap.scrollLeft + box.width);
+      tip.style.left = `${px}px`; tip.style.top = `${py}px`;
+      tip.classList.add('on');
+    };
+    const hide = () => { wrap.classList.remove('hovering'); tip.classList.remove('on'); svg.querySelectorAll('.hit.cur').forEach((h) => h.classList.remove('cur')); };
+    svg.querySelectorAll<SVGGElement>('.hit').forEach((g) => {
+      g.addEventListener('pointerenter', () => show(g));
+      g.addEventListener('pointerleave', hide);
+      g.addEventListener('focus', () => show(g));
+      g.addEventListener('blur', hide);
+    });
+  }
+  const sec = document.getElementById('board')!;
+  const buttons = [...sec.querySelectorAll<HTMLButtonElement>('[data-set]')];
+  for (const b of buttons) b.addEventListener('click', () => {
+    for (const x of buttons) x.setAttribute('aria-pressed', String(x === b));
+    sec.querySelectorAll<HTMLElement>('[data-view]').forEach((el) => { el.hidden = el.dataset.view !== b.dataset.set; });
+    sec.querySelector('[data-which]')!.textContent = b.dataset.lede!;
+    place();
+  });
+  // Where the task dial sits, decided per task set from the room the bars need (an intrinsic layout, the "sidebar"
+  // pattern of Every Layout, with the threshold taken from the content instead of a fixed breakpoint): beside the
+  // bars while every bar keeps a readable width next to it; otherwise beside the "Success by task" table, which the
+  // smaller task sets leave half empty, and under that table where even it is too wide (the slot wraps).
+  const top = sec.querySelector<HTMLElement>('.top')!, dials = sec.querySelector<HTMLElement>('.dials')!;
+  function place() {
+    const v = buttons.find((x) => x.getAttribute('aria-pressed') === 'true')!.dataset.set!;
+    const fig = sec.querySelector<HTMLElement>(`[data-dial][data-view="${v}"]`), chart = sec.querySelector<HTMLElement>(`.barcol [data-view="${v}"] .chart`);
+    if (!fig || !chart) return;
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize), w = innerWidth;
+    const n = parseFloat(chart.style.getPropertyValue('--n')) || 1;
+    const dialW = Math.min(Math.max(19 * rem, 0.31 * w), 30 * rem), gap = Math.min(Math.max(1.5 * rem, 0.03 * w), 3 * rem);
+    const beside = w > 1200 && top.clientWidth >= n * 4.6 * rem + 2.6 * rem + dialW + gap;
+    const slot = beside ? dials : sec.querySelector<HTMLElement>(`[data-dslot="${v}"]`)!;
+    if (fig.parentElement !== slot) slot.append(fig);
+    top.classList.toggle('solo', !beside);
+  }
+  place();
+  new ResizeObserver(place).observe(top);
+</script>
+
+<style>
+  .board { padding-block: 4rem 3.5rem; font-family: var(--sans); }
+  /* the head uses the same two columns as the bars and the dial, so the switch sits centred over the dial */
+  .head { display: grid; grid-template-columns: minmax(0, 1fr) clamp(19rem, 31vw, 30rem); gap: 1rem clamp(1.5rem, 3vw, 3rem); align-items: end; margin-bottom: 1.75rem; }
+  .head .seg { justify-self: center; }
+  @media (max-width: 1200px) { .head { grid-template-columns: 1fr; } .head .seg { justify-self: start; } }
+  h2 { margin: 0; font-family: var(--serif); font-weight: 600; font-size: clamp(1.9rem, 3.4vw, 2.4rem); line-height: 1.1; }
+  .head p { margin: 0.4rem 0 0; color: var(--ink-2); max-width: 44rem; }
+  [data-which] { color: var(--ink); font-weight: 600; }
+  .seg { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 999px; padding: 3px; gap: 2px; }
+  .seg button { font: 600 0.875rem var(--sans); border: 0; background: transparent; color: var(--ink-2); padding: 0.4rem 0.9rem; border-radius: 999px; cursor: pointer; }
+  .seg button[aria-pressed='true'] { background: var(--ink); color: var(--paper); }
+  .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .scroll { overflow-x: auto; }
+  /* this section runs wider than the page column, so the task dial beside the bars can be large */
+  .wide { width: min(100% - 2 * var(--gutter), 86rem); }
+  .top { display: grid; grid-template-columns: minmax(0, 1fr) clamp(19rem, 31vw, 30rem); gap: clamp(1.5rem, 3vw, 3rem); align-items: center; }
+  .dials { min-width: 0; }
+  @media (max-width: 1200px) { .top { grid-template-columns: 1fr; } .dials { max-width: 34rem; margin-inline: auto; width: 100%; } }
+  /* the dial has moved to the per-task table (see place() in the script): the bars take the whole width */
+  .top.solo { grid-template-columns: minmax(0, 1fr); }
+  .top.solo .dials { display: none; }
+  .ptrow { display: flex; flex-wrap: wrap; align-items: center; gap: 2rem clamp(1.5rem, 3vw, 3rem); }
+  .ptrow > .scroll { flex: 0 1 auto; min-width: 0; max-width: 100%; }
+  .dslot { flex: 1 1 19rem; max-width: 30rem; margin-inline: auto; }
+  .dslot:not(:has([data-dial]:not([hidden]))) { display: none; }
+
+  /* bars */
+  .chart { min-width: calc(var(--n) * 3.2rem + 2.6rem); padding: 0.8rem 0 0 2.6rem; }
+  .plot { position: relative; height: 21rem; border-bottom: 1.5px solid var(--ink-2); }
+  .gl { position: absolute; left: 0; right: 0; height: 0; border-top: 1px solid var(--rule); }
+  .gl i { position: absolute; right: calc(100% + 0.6rem); top: -0.55rem; font: normal 0.75rem var(--sans); font-variant-numeric: tabular-nums; color: var(--ink-3); }
+  .cols, .names { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 0 clamp(0.35rem, 1vw, 1.1rem); padding-inline: 0.4rem; }
+  .cols { position: absolute; inset: 0; align-items: end; }
+  .col { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; outline: none; }
+  /* the score sits in the middle of its bar; on light bars it is dark, on a bar too short for it, above it */
+  .val { position: absolute; top: 50%; transform: translateY(-50%); left: 0; right: 0; text-align: center; color: #fff; font-family: var(--serif); font-size: clamp(0.95rem, 1.6vw, 1.25rem); font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+  .col[data-s='learned'] .val { color: #15181d; }
+  /* dark mode: OpenAI's light grey, the clay and Kimi's blue are light bars, so their score is dark */
+  :global(:root[data-theme='dark']) .col:is([data-s='astra'], [data-s='sol'], [data-s='sol61'], [data-s='terra'], [data-s='opus'], [data-s='haiku'], [data-s='sonnet'], [data-s='kimi']) .val { color: #15181d; }
+  :global(:root[data-theme='dark']) .col[data-s='learned'] .val { color: #fff; }
+  .col.short .val { top: auto; bottom: calc(100% + 0.35rem); transform: none; color: var(--ink) !important; }
+  /* under the pointer (or keyboard focus) the model and its harness show as two short lines just above the bar,
+     centred on it and no wider than its column, so they never cover a neighbour */
+  .tip { position: absolute; bottom: calc(var(--h) + 0.45rem); left: 50%; width: max-content; max-width: calc(100% + 0.6rem); z-index: 2; pointer-events: none;
+    display: grid; justify-items: center; gap: 0.1rem; text-align: center; text-wrap: balance; line-height: 1.2;
+    transform: translate(-50%, 3px); opacity: 0; transition: opacity 120ms, transform 120ms; }
+  .tip b { font: 600 0.8rem/1.2 var(--sans); color: var(--ink); }
+  .tip span { font: 500 0.72rem/1.2 var(--sans); color: var(--ink-3); }
+  .col.short .tip { bottom: calc(var(--h) + 2rem); }
+  .col:hover .tip, .col:focus-visible .tip { opacity: 1; transform: translate(-50%, 0); }
+  .col:focus-visible .bar { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .bar { position: relative; display: block; width: 100%; height: var(--h); border-radius: 6px 6px 0 0; background: var(--c); }
+  .names { padding-top: 0.9rem; }
+  .nm { display: grid; justify-items: center; gap: 0.3rem; text-align: center; font-size: 0.76rem; line-height: 1.2; }
+  .nm svg { width: 1.35rem; height: 1.35rem; margin-bottom: 0.25rem; }
+  .nm .mono { width: 1.35rem; height: 1.35rem; margin-bottom: 0.25rem; }
+  .kind { font-size: 0.62rem; color: var(--ink-3); }
+  .pt tbody th.lp { color: var(--ink-2); font-weight: 500; }
+  .nm b { font-weight: 600; }
+  /* Lower-case labels in a ring: whole-pixel box, the line box trimmed to the x-height so the letters
+     sit at its optical centre (the font shorthand would otherwise reset line-height to the font's
+     tall, bottom-heavy 'normal'). */
+  .eff { display: inline-flex; align-items: center; justify-content: center; height: 18px; padding: 0 8px; border-radius: 9px;
+    border: 1px solid var(--c); color: var(--ink-2); font: 600 11px/1 var(--sans); letter-spacing: 0.02em; text-box: trim-both ex alphabetic; }
+
+  /* per-task table */
+  h3 { margin: 3rem 0 0.9rem; font-family: var(--serif); font-weight: 600; font-size: 1.55rem; }
+  .pt { border-collapse: separate; border-spacing: 2px; font-size: 0.8rem; min-width: 46rem; }
+  .pt th { font-weight: 500; }
+  .pt .sc th { padding: 0 0 0.35rem; text-align: left; font-size: 0.74rem; color: var(--ink-2); }
+  .pt .sc th span { display: block; border-top: 3px solid var(--sc); padding-top: 0.3rem; }
+  .pt .tk th { height: 7.5rem; vertical-align: bottom; padding: 0; width: 2.4rem; }
+  .pt .tk th span { display: inline-block; transform: rotate(-58deg); transform-origin: 0.55rem 0.55rem; white-space: nowrap; font: 0.74rem var(--sans); color: var(--ink-2); width: 1.2rem; }
+  .pt tbody th { text-align: left; white-space: nowrap; padding-right: 0.9rem; font-weight: 600; font-size: 0.86rem; }
+  .pt tbody th small { font-weight: 500; color: var(--ink-3); }
+  .pt td { width: 2.4rem; height: 1.9rem; text-align: center; border-radius: 3px; font: 500 0.78rem var(--sans); font-variant-numeric: tabular-nums;
+    background: color-mix(in oklch, var(--accent) var(--p), var(--paper-2)); color: var(--ink-2); }
+  .pt td.hi { color: var(--paper); }
+  .pt td.mean, .pt th.mean { background: none; font: 600 0.9rem var(--serif); color: var(--ink); width: 3rem; padding-left: 0.5rem; }
+
+  /* cost curve */
+  .sub { margin: -0.5rem 0 1rem; color: var(--ink-2); font-size: 0.95rem; max-width: 44rem; }
+  .left { margin: 0.6rem 0 0; color: var(--ink-3); font-size: 0.85rem; }
+  .cost-chart { display: block; width: 100%; min-width: 40rem; height: auto; font-family: var(--sans); }
+  .cost-chart .grid { stroke: var(--rule); }
+  .cost-chart .dash { stroke-dasharray: 2 4; }
+  .cost-chart .tick { font-size: 12px; fill: var(--ink-3); }
+  .cost-chart .axis { font-size: 13px; fill: var(--ink-2); }
+  .cost-chart .join { stroke: var(--c); stroke-width: 1.8; stroke-linecap: round; }
+  .cost-chart .pt { fill: var(--c); stroke: var(--paper); stroke-width: 2; transition: r 120ms; }
+  .cost-chart .lab { font-size: 13.5px; font-weight: 600; fill: var(--c); }
+  .cost-chart .hit { cursor: pointer; outline: none; }
+  .cost-chart .zone { fill: transparent; }
+  .cost-chart .hit.cur .pt { r: 8; }
+  .cost-chart .hit:focus-visible .pt { stroke: var(--accent); }
+  .cost-chart .series, .cost-chart .lab { transition: opacity 150ms; }
+  /* the others go one quiet grey, whatever their colour (Kimi's black would otherwise stay loud) */
+  .costwrap.hovering .series:not(.on), .costwrap.hovering .lab:not(.on) { --c: var(--ink-3) !important; opacity: 0.4; }
+  .cost-chart .guide { opacity: 0; pointer-events: none; }
+  .costwrap.hovering .guide { opacity: 1; }
+  .cost-chart .guide line { stroke: var(--c); stroke-width: 1.2; stroke-dasharray: 4 3; }
+  .cost-chart .guide rect { fill: var(--paper); }
+  .cost-chart .guide text { font-size: 12.5px; font-weight: 700; fill: var(--c); font-variant-numeric: tabular-nums; }
+  .costwrap { position: relative; }
+  .ctip { position: absolute; z-index: 2; pointer-events: none; display: grid; gap: 0.15rem; padding: 0.45rem 0.7rem; border-radius: 8px;
+    background: var(--paper); border: 1px solid var(--rule); box-shadow: 0 4px 14px rgb(0 0 0 / 0.08); white-space: nowrap;
+    transform: translate(14px, calc(-100% - 10px)); opacity: 0; transition: opacity 120ms; }
+  .ctip.flip { transform: translate(calc(-100% - 14px), calc(-100% - 10px)); }
+  .ctip.on { opacity: 1; }
+  .ctip b { display: flex; align-items: center; gap: 0.4rem; font: 600 0.82rem var(--sans); color: var(--ink); }
+  .ctip i { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--c); }
+  .ctip .e { padding-left: 0.95rem; font: 500 0.76rem var(--sans); color: var(--ink-3); }
+  .fine { display: grid; gap: 0.25rem; margin-top: 1.2rem; font-size: 0.82rem; color: var(--ink-3); max-width: 56rem; }
+  .fine p { margin: 0; }
+</style>

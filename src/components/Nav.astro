@@ -6,10 +6,11 @@ import Logo from './Logo.astro';
 import Icon from './Icon.astro';
 import { asset } from '../lib/data';
 
-// On a sub-page (`home`), the brand goes back to the project page and the
-// Leaderboard link is the current page.
-interface Props { sections: { id: string; label: string }[]; home?: boolean }
-const { sections, home = false } = Astro.props;
+// The benchmark page is the home page; on the paper page the brand and the
+// Leaderboard link go back to it, and Paper is the current page.
+interface Props { sections: { id: string; label: string }[]; page?: 'bench' | 'paper' }
+const { sections, page = 'bench' } = Astro.props;
+const bench = page === 'bench';
 const code = site.links.find((l) => l.kind === 'github' && l.url);
 const docs = site.links.find((l) => l.kind === 'docs' && l.url);
 const accent = site.titleAccent && site.title.endsWith(site.titleAccent) ? site.titleAccent : null;
@@ -17,15 +18,16 @@ const head = accent ? site.title.slice(0, -accent.length) : site.title;
 ---
 <nav class="nav" aria-label="Sections">
   <div class="inner wrap">
-    <a class="brand" href={home ? asset('/') : '#top'}>
+    <a class="brand" href={bench ? '#top' : asset('/')}>
       <Logo />
       <span>{head}{accent && <span class="accent">{accent}</span>}</span>
     </a>
     <ul class="sections">
       {sections.map((s) => <li><a href={`#${s.id}`}>{s.label}</a></li>)}
     </ul>
-    <a class="board" href={asset('/leaderboard/')} aria-current={home ? 'page' : undefined}>Leaderboard</a>
-    {docs && (
+    <a class="board" href={bench ? '#board' : asset('/#board')}>Leaderboard</a>
+    <a class="board" href={asset('/paper/')} aria-current={page === 'paper' ? 'page' : undefined}>Paper</a>
+    {docs && !bench && (
       <a class="docs" href={docs.url} aria-label="Docs">
         <Icon name="book" size={16} />
         <span>Docs</span>

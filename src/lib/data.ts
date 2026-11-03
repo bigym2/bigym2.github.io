@@ -8,6 +8,7 @@ import tasksJson from '../data/tasks.json';
 import resultsJson from '../data/results.json';
 import agentJson from '../data/agent.json';
 import computeJson from '../data/compute.json';
+import boardJson from '../data/board.json';
 
 // Builds run from the project root (pnpm dev / pnpm build).
 const root = `${process.cwd()}/`;
@@ -26,6 +27,7 @@ export const tasks = parse('tasks.json', schema.tasks, tasksJson);
 export const results = parse('results.json', schema.results, resultsJson);
 export const agent = parse('agent.json', schema.agent, agentJson);
 export const compute = parse('compute.json', schema.compute, computeJson);
+export const board = parse('board.json', schema.board, boardJson);
 
 // Cross-file checks: every task id and every media file must exist.
 const problems: string[] = [];
@@ -33,6 +35,7 @@ const taskIds = new Set(tasks.tasks.map((t) => t.id));
 results.generations.forEach((g) => g.rows.forEach((r) => taskIds.has(r.task) || problems.push(`results.json (${g.id}): unknown task "${r.task}"`)));
 agent.tasks.forEach((t) => taskIds.has(t.task) || problems.push(`agent.json: unknown task "${t.task}"`));
 compute.rows.forEach((r) => taskIds.has(r.task) || problems.push(`compute.json: unknown task "${r.task}"`));
+[...board.core, ...board.extended, ...board.fixed_start].forEach((t) => taskIds.has(t) || problems.push(`board.json: unknown task "${t}"`));
 
 const mediaPaths = [
   site.hero.video, site.hero.poster,

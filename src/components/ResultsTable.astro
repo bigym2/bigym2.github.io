@@ -30,7 +30,11 @@ const harnessMarks = {
 } as const;
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 const best = (vals: (number | null)[]) => Math.max(...vals.filter((v): v is number => v !== null));
-const tables = results.generations.filter((g) => !g.hidden).map((g) => {
+// `hide` drops methods by id (the paper page shows only the agents in the paper).
+interface Props { hide?: string[] }
+const hidden = new Set(Astro.props.hide ?? []);
+const tables = results.generations.filter((g) => !g.hidden).map((g0) => {
+  const g = { ...g0, groups: g0.groups.map((grp) => ({ ...grp, methods: grp.methods.filter((id) => !hidden.has(id)) })).filter((grp) => grp.methods.length) };
   const methods = g.groups.flatMap((grp) => grp.methods.map((id) => g.methods.find((m) => m.id === id)!));
   const withSe = new Set(methods.filter((m) => g.rows.some((r) => r.values[m.id]?.se != null)).map((m) => m.id));
   return { ...g, methods, withSe, meanBest: best(methods.map((m) => g.mean[m.id])) };

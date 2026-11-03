@@ -1,0 +1,30 @@
+---
+// Where the effect's control panel opens (only with ?fx in the URL): below the hero, centred,
+// never over the picture. Styles for the panel the script builds.
+---
+<div id="fx-panel" hidden></div>
+<style is:global>
+  .fxpanel { width: min(420px, 100% - 2rem); margin: 1rem auto 0; padding: 0.6rem 1rem 0.8rem; border: 1px solid var(--rule); border-radius: 12px; background: var(--paper); font-family: var(--sans); box-shadow: var(--shadow-lift); }
+  .fxrow { display: grid; grid-template-columns: 136px minmax(0, 1fr); align-items: center; height: 46px; }
+  .fxrow[hidden] { display: none; }
+  .fxlab { font-size: 0.85rem; color: var(--ink-2); }
+  .fxslider { display: grid; grid-template-columns: minmax(0, 1fr) 2.8rem 0.9rem; align-items: center; gap: 0.5rem; }
+  .fxtrack { position: relative; height: 22px; border-radius: 8px; background: linear-gradient(90deg, var(--accent) var(--v, 50%), var(--paper-3) var(--v, 50%)); }
+  .fxtrack input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; background: none; -webkit-appearance: none; appearance: none; cursor: pointer; }
+  .fxtrack input::-webkit-slider-thumb { -webkit-appearance: none; width: 9px; height: 30px; border-radius: 3px; background: var(--paper); border: 1.5px solid var(--ink); }
+  .fxtrack input::-moz-range-thumb { width: 9px; height: 30px; border-radius: 3px; background: var(--paper); border: 1.5px solid var(--ink); }
+  .fxtrack input:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
+  .fxsnap { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--ink-3); pointer-events: none; }
+  .fxnum { width: 2.8rem; height: 28px; text-align: center; font: 600 0.85rem var(--sans); color: var(--ink); background: var(--paper-2); border: 1px solid var(--rule); border-radius: 6px; -moz-appearance: textfield; }
+  .fxnum::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .fxunit { font-size: 0.8rem; color: var(--ink-3); }
+  .fxtabs { display: inline-flex; border: 1px solid var(--rule); border-radius: 8px; padding: 2px; gap: 2px; justify-self: start; }
+  .fxtabs button { font: 600 0.82rem var(--sans); border: 0; background: none; color: var(--ink-2); padding: 0.3rem 0.8rem; border-radius: 6px; cursor: pointer; }
+  .fxtabs button[aria-pressed='true'] { background: var(--ink); color: var(--paper); }
+  .fxswatches { display: flex; gap: 0.55rem; }
+  .fxsw { width: 22px; height: 22px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12); }
+  .fxsw[aria-pressed='true'] { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.5px var(--ink); }
+  .fxfoot { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; padding-top: 0.5rem; border-top: 1px solid var(--rule); margin-top: 0.3rem; }
+  .fxreset { font: 600 0.82rem var(--sans); border: 1px solid var(--rule); background: var(--paper-2); color: var(--ink); border-radius: 8px; padding: 0.35rem 0.75rem; cursor: pointer; }
+  .fxout { font-size: 0.66rem; color: var(--ink-3); overflow-wrap: anywhere; text-align: right; }
+</style>

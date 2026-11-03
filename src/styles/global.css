@@ -21,22 +21,24 @@
   --accent-ink: oklch(0.45 0.12 var(--hue));
   --accent-wash: oklch(0.52 0.13 var(--hue) / 0.09);
   --bar: oklch(0.72 0.012 var(--hue));
-  /* Agent chart, in the colours the agent figures use elsewhere: Astra
-     blue (#4A8CF7), Opus peach (#F2B08F), Sol gold (#D9A149) and, for
-     GPT-6.1 Sol, the paper's Okabe-Ito green (#009E73); DeepSeek and Kimi
-     take their logo colours, DeepSeek blue (#5786FE) and Kimi black (white
-     on dark paper); GPT-6.1 Terra takes Okabe-Ito reddish purple (#CC79A7). Dark mode takes
-     them as they are, with the green lifted to read on dark paper; on paper
-     blue and peach keep their hue and the peach drops in lightness so it
-     stays visible. Gold and peach sit close (OKLab ΔE about 10), so every
-     chart point also carries its name. */
-  --series-astra: oklch(0.58 0.18 259);
-  --series-opus: oklch(0.66 0.12 48);
-  --series-sol: #d9a149;
-  --series-sol61: #009e73;
-  --series-deepseek: #5786fe;
-  --series-kimi: #000000;
-  --series-terra: #b85f93;
+  /* Agent charts: one colour per maker, as Artificial Analysis does (its creator colours, read from its page data
+     10-30): OpenAI #1f1f1f, Anthropic #cc785c, DeepSeek #2243e6, Kimi #047afe. Models of one maker share the colour
+     and are told apart by their names. Dark mode: OpenAI turns light grey, the other three are lifted to read on
+     dark paper. */
+  --series-astra: #1f1f1f;
+  --series-sol: #1f1f1f;
+  --series-sol61: #1f1f1f;
+  --series-terra: #1f1f1f;
+  --series-opus: #cc785c;
+  --series-haiku: #cc785c;
+  --series-sonnet: #cc785c;
+  --series-deepseek: #2243e6;
+  --series-kimi: #047afe;
+  /* Scenes of the task set, Okabe-Ito hues as in the paper's figures; the same in both themes. */
+  --scene-reaching: #56b4e9;
+  --scene-tabletop: #009e73;
+  --scene-dishwasher: #e69f00;
+  --scene-counter: #d55e00;
   --media-edge: oklch(0 0 0 / 0.08);
   --plate: transparent;
   --shadow-lift: 0 1px 2px oklch(0 0 0 / 0.05), 0 8px 24px -12px oklch(0 0 0 / 0.18);
@@ -73,13 +75,15 @@
   --accent-ink: oklch(0.8 0.09 240);
   --accent-wash: oklch(0.74 0.11 240 / 0.12);
   --bar: oklch(0.5 0.01 var(--hue));
-  --series-astra: #4a8cf7;
-  --series-opus: #f2b08f;
-  --series-sol: #d9a149;
-  --series-sol61: oklch(0.72 0.13 165);
-  --series-deepseek: #5786fe;
-  --series-kimi: #ffffff;
-  --series-terra: #cc79a7;
+  --series-astra: #e6e6e6;
+  --series-sol: #e6e6e6;
+  --series-sol61: #e6e6e6;
+  --series-terra: #e6e6e6;
+  --series-opus: #d98b70;
+  --series-haiku: #d98b70;
+  --series-sonnet: #d98b70;
+  --series-deepseek: #6f86ff;
+  --series-kimi: #3d9bff;
   --media-edge: oklch(1 0 0 / 0.08);
   /* Official logo colours stay untouched; in dark mode they sit on a paper plate. */
   --plate: oklch(0.97 0.003 var(--hue));
