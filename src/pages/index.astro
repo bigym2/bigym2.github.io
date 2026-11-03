@@ -1,11 +1,13 @@
 ---
-// The benchmark: the live coding-agent leaderboard first, then the tasks, the paper's
-// comparison with learned policies, what the programs show, and the paper last.
+// The benchmark: the live coding-agent leaderboard first, then every program the paper's agents submitted (read it,
+// replay it on each hidden seed), the tasks, the paper's comparison with learned policies, what the programs show,
+// and the paper last.
 import Base from '../layouts/Base.astro';
 import BenchHero from '../components/bench/BenchHero.astro';
 import Board from '../components/bench/Board.astro';
 import Findings from '../components/bench/Findings.astro';
 import Faq from '../components/bench/Faq.astro';
+import PolicyExplorer from '../components/PolicyExplorer.astro';
 import Citation from '../components/Citation.astro';
 import Section from '../components/Section.astro';
 import Footer from '../components/Footer.astro';
@@ -15,6 +17,10 @@ import { site, asset } from '../lib/data';
   <BenchHero />
   <main>
     <Board />
+    <Section id="explorer" title="Every program, every seed" band>
+      <Fragment slot="lede">What an agent hands in is a program you can read. Pick a cell to see the one a session submitted and <span class="key">replay it on each hidden seed</span>: Claude Opus 5.5 and GPT-6 Astra on the 9 core tasks, as in the paper. More of both on <a href={asset('/paper/#explorer')}>the paper’s page</a>.</Fragment>
+      <PolicyExplorer />
+    </Section>
     <Findings />
     <Faq />
     <Section id="citation" title="The paper" band>
