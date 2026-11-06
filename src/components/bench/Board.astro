@@ -208,6 +208,15 @@ const mark = (m: string) => makerMarks[m as Maker];
     const slot = beside ? dials : sec.querySelector<HTMLElement>(`[data-dslot="${v}"]`)!;
     if (fig.parentElement !== slot) slot.append(fig);
     top.classList.toggle('solo', !beside);
+    fit();
+  }
+  // A bar's value sits inside the bar when the bar is tall enough for it, else just above it (11-06: Haiku's 8.3 on
+  // the core view went above although its bar holds it; the server's guess is the share of the scale, this measures).
+  function fit() {
+    for (const col of sec.querySelectorAll<HTMLElement>('.barcol [data-view]:not([hidden]) .col')) {
+      const bar = col.querySelector<HTMLElement>('.bar')!, val = col.querySelector<HTMLElement>('.val')!;
+      col.classList.toggle('short', bar.clientHeight < val.offsetHeight + 6);
+    }
   }
   place();
   new ResizeObserver(place).observe(top);
