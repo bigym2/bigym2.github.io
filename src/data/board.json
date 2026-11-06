@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-31",
+ "updated": "2026-11-05",
  "sessions_per_task": 3,
  "budget_steps": 101000,
  "core": [
@@ -104,6 +104,36 @@
      "cost": {
       "core": 295.73,
       "ext": 574.65
+     }
+    },
+    {
+     "effort": "max",
+     "tested": "2026-11-05",
+     "per": {
+      "dishwasher_close": 100.0,
+      "dishwasher_load_cups": 75.0,
+      "drawer_top_close": 100.0,
+      "drawer_top_open": 99.33,
+      "move_plate": 25.33,
+      "move_two_plates": 8.0,
+      "pick_box": 41.33,
+      "reach_target_dual": 91.33,
+      "reach_target_multi_modal": 99.67,
+      "dishwasher_load_cutlery": 6.67,
+      "dishwasher_load_plates": 4.67,
+      "flip_cup": 85.0,
+      "flip_cutlery": 12.67,
+      "put_cups": 7.67,
+      "reach_target_single": 100.0,
+      "sandwich_remove": 4.33,
+      "saucepan_to_hob": 38.0,
+      "stack_blocks": 0.0,
+      "wall_cupboard_close": 100.0,
+      "wall_cupboard_open": 100.0
+     },
+     "cost": {
+      "core": 349.08,
+      "ext": 778.28
      }
     }
    ]

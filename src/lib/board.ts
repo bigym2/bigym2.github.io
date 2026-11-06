@@ -81,8 +81,9 @@ export function chart(rs: Row[]) {
   }));
   // A model run at several efforts is named along its line, as Artificial Analysis does: beside the middle of the
   // line, on its upper side, the text running away from the line. A single point is named to its right; where that
-  // does not fit or would cover another point or name, above it, then below it, then to its left (so a name never
-  // sits right beside a neighbour's dot, as Sonnet's did next to Opus's at the right edge). Labels that still
+  // does not fit or would cover another point or name, above it, then below it, then to its left, then under or over it slid sideways (so a name never
+  // sits right beside a neighbour's dot, as Sonnet's did next to Opus's at the right edge, nor across another
+  // model's line). Labels that still
   // collide are pushed apart.
   type Anchor = 'start' | 'middle' | 'end';
   type Label = { id: string; text: string; w: number; anchor: Anchor; lx: number; ly: number };
@@ -111,17 +112,28 @@ export function chart(rs: Row[]) {
     const a = x0(l), b = a + l.w, top = l.ly - 11, bot = l.ly + 3;
     if (a < L || b > W - R || top < T - 6) return false;
     if (allDots.some((d) => d.id !== l.id && d.x > a - 9 && d.x < b + 9 && d.y > top - 7 && d.y < bot + 7)) return false;
+    // nor across another model's line (Opus's name sat on Astra's high-to-max line in the 20-task view)
+    if (arrows.some((g) => g.id !== l.id && Array.from({ length: 25 }, (_, i) => i / 24).some((t) => {
+      const px = g.x1 + (g.x2 - g.x1) * t, py = g.y1 + (g.y2 - g.y1) * t;
+      return px > a - 3 && px < b + 3 && py > top - 3 && py < bot + 3;
+    }))) return false;
     return labels.every((o) => { const oa = x0(o); return b < oa - 4 || a > oa + o.w + 4 || bot < o.ly - 13 || top > o.ly + 5; });
   };
   for (const r of [...rs].sort((p, q) => X(p.points[0].cost) - X(q.points[0].cost))) {
     const at = single.get(r.id);
     if (!at) continue;
     const [x, y] = at, w = r.name.length * 7.3, mid = Math.min(Math.max(x, L + w / 2), W - R - w / 2);
+    // the name under or over the dot, slid right or left so it starts or ends just past the dot (kept inside the plot)
+    const right = Math.min(x - 12, W - R - w - 1), left = Math.max(x + 12, L + w + 1);
     const tries: Label[] = [
       { id: r.id, text: r.name, w, anchor: 'start', lx: x + 12, ly: y + 4.5 },
       { id: r.id, text: r.name, w, anchor: 'middle', lx: mid, ly: y - 12 },
       { id: r.id, text: r.name, w, anchor: 'middle', lx: mid, ly: y + 21 },
       { id: r.id, text: r.name, w, anchor: 'end', lx: x - 12, ly: y + 4.5 },
+      { id: r.id, text: r.name, w, anchor: 'start', lx: right, ly: y + 21 },
+      { id: r.id, text: r.name, w, anchor: 'end', lx: left, ly: y + 21 },
+      { id: r.id, text: r.name, w, anchor: 'start', lx: right, ly: y - 12 },
+      { id: r.id, text: r.name, w, anchor: 'end', lx: left, ly: y - 12 },
     ];
     labels.push(tries.find(clear) ?? (x + 12 + w > W - R ? tries[3] : tries[0]));
   }
