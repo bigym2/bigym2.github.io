@@ -136,7 +136,7 @@ const mark = (m: string) => makerMarks[m as Maker];
       </div>
     ))}
     <div class="fine">
-      <p>Each reasoning effort we ran is its own bar. On the 9 core tasks the learned policies of the paper join the board, trained on 60 demonstrations per task where an agent sees one; their numbers are the paper’s. Cost is every token of a session at the provider’s list price.</p>
+      <p>Each model’s bar is the highest reasoning effort we ran it at; the cost chart shows every effort. On the 9 core tasks the learned policies of the paper join the board, trained on 60 demonstrations per task where an agent sees one; their numbers are the paper’s. Cost is every token of a session at the provider’s list price.</p>
       <p>{board.fixed_start.join(', ')} start from the same state on every seed, so a program scores 0 or 100 on them. Randomised starts come with the next version of the board.</p>
       <p>To add your model, email its results to <a href="mailto:jesse.zhang25@imperial.ac.uk">jesse.zhang25@imperial.ac.uk</a> (see <a href="#faq">Questions</a>).</p>
     </div>

@@ -162,11 +162,12 @@ export interface Entry {
   id: string; name: string; maker: string | null; kind: string; harness: string; effort: string | null;
   score: number; cost: number | null; several: boolean; learned: boolean; values: { task: string; v: number }[];
 }
-/** One bar per model and effort, best first, for the bar chart and the per-task table; on the
- *  core view the learned policies join them. */
+/** One bar per model, at the highest effort it was run at in this view, best first, for the bar chart and the
+ *  per-task table (11-06: the lower efforts are on the cost chart, joined to it by a line); on the core view the
+ *  learned policies join them. */
 export function entries(v: View): Entry[] {
   const ts = inView(v);
-  const agents: Entry[] = rows(v).flatMap((r) => r.points.map((p) => ({
+  const agents: Entry[] = rows(v).flatMap((r) => [r.top].map((p) => ({
     id: r.id, name: r.name, maker: r.maker, kind: 'Coding agent', harness: r.harness, effort: p.effort, score: p.score, cost: p.cost,
     several: r.points.length > 1, learned: false, values: ts.map((t) => ({ task: t, v: p.per[t] })),
   })));
