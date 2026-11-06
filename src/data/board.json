@@ -453,5 +453,23 @@
     }
    ]
   }
- ]
+ ],
+ "learned_extended": {
+  "pi05": {
+   "source": "collaborator SFT report, 2026-11-06 12:06 GMT; last five checkpoints x 50 episodes, pooled",
+   "per": {
+    "reach_target_single": 100.0,
+    "wall_cupboard_open": 88.4,
+    "wall_cupboard_close": 95.6,
+    "flip_cup": 80.0,
+    "flip_cutlery": 76.8,
+    "dishwasher_load_cutlery": 50.8,
+    "put_cups": 40.0,
+    "dishwasher_load_plates": 67.6,
+    "sandwich_remove": 38.4,
+    "saucepan_to_hob": 19.6,
+    "stack_blocks": 0.0
+   }
+  }
+ }
 }

@@ -163,19 +163,26 @@ export interface Entry {
   score: number; cost: number | null; several: boolean; learned: boolean; values: { task: string; v: number }[];
 }
 /** One bar per model, at the highest effort it was run at in this view, best first, for the bar chart and the
- *  per-task table (11-06: the lower efforts are on the cost chart, joined to it by a line); on the core view the
- *  learned policies join them. */
+ *  per-task table (11-06: the lower efforts are on the cost chart, joined to it by a line); the learned policies
+ *  join them in every view they have all the tasks of (the core view; π0.5 in all three). */
 export function entries(v: View): Entry[] {
   const ts = inView(v);
   const agents: Entry[] = rows(v).flatMap((r) => [r.top].map((p) => ({
     id: r.id, name: r.name, maker: r.maker, kind: 'Coding agent', harness: r.harness, effort: p.effort, score: p.score, cost: p.cost,
     several: r.points.length > 1, learned: false, values: ts.map((t) => ({ task: t, v: p.per[t] })),
   })));
-  const learned: Entry[] = v !== 'core' ? [] : LEARNED.filter((l) => paperGen.mean[l.id] != null).map((l) => ({
-    id: l.id, name: paperGen.methods.find((m) => m.id === l.id)!.label, maker: null, kind: l.kind, harness: '', effort: null,
-    score: paperGen.mean[l.id]!, cost: null, several: false, learned: true,
-    values: ts.map((t) => ({ task: t, v: paperGen.rows.find((r) => r.task === t)?.values[l.id]?.mean ?? 0 })),
-  }));
+  // A learned policy joins a view when it has a number for every task in it: the paper's on the core tasks, and
+  // board.learned_extended on the extended ones (π0.5 only, 11-06). The core view keeps the paper's mean as is.
+  const ext = board.learned_extended ?? {};
+  const value = (id: string, t: string) => (core.has(t) ? paperGen.rows.find((r) => r.task === t)?.values[id]?.mean : ext[id]?.per[t]);
+  const learned: Entry[] = LEARNED.filter((l) => paperGen.mean[l.id] != null && ts.every((t) => value(l.id, t) != null)).map((l) => {
+    const values = ts.map((t) => ({ task: t, v: value(l.id, t)! }));
+    return {
+      id: l.id, name: paperGen.methods.find((m) => m.id === l.id)!.label, maker: null, kind: l.kind, harness: '', effort: null,
+      score: v === 'core' ? paperGen.mean[l.id]! : values.reduce((a, x) => a + x.v, 0) / values.length, cost: null, several: false,
+      learned: true, values,
+    };
+  });
   return [...agents, ...learned].sort((a, b) => b.score - a.score);
 }
 /** The tasks in a view, grouped by scene, for the per-task table's header. */

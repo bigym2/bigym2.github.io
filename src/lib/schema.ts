@@ -221,6 +221,9 @@ export const board = z.object({
       cost: z.object({ core: z.number(), ext: z.number().nullable() }),
     })).min(1),
   })).min(1),
+  // Learned policies run on the extended tasks after the paper (11-06: π0.5, the collaborator's single-task SFT):
+  // per-task mean success (percent) on board.extended, and where the numbers come from.
+  learned_extended: z.record(z.string(), z.object({ source: z.string(), per: z.record(z.string(), z.number()) })).optional(),
 });
 
 export const compute = z.object({
