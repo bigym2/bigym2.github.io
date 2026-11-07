@@ -25,7 +25,7 @@ const mark = (m: string) => makerMarks[m as Maker];
     <header class="head">
       <div>
         <h2>Leaderboard</h2>
-        <p>Mean success over <span data-which>{VIEWS.find((v) => v.id === START)!.lede}</span>, {board.sessions_per_task} independent sessions per task, 100 hidden episodes per final program. <span class="upd">Updated {updated}.</span></p>
+        <p>Mean success over <span data-which>{VIEWS.find((v) => v.id === START)!.lede}</span>, {board.sessions_per_task} independent sessions per task, 100 hidden episodes per final program.</p>
       </div>
       <div class="seg" role="group" aria-label="Task set">
         {VIEWS.map((v) => <button type="button" data-set={v.id} data-lede={v.lede} aria-pressed={v.id === START ? 'true' : 'false'}>{v.label}</button>)}
@@ -136,6 +136,7 @@ const mark = (m: string) => makerMarks[m as Maker];
       </div>
     ))}
     <div class="fine">
+      <p class="upd">Last updated <time datetime={board.updated}>{updated}</time></p>
       <p>Each model’s bar is the highest reasoning effort we ran it at; the cost chart shows every effort. On the 9 core tasks the learned policies of the paper join the board, trained on 60 demonstrations per task where an agent sees one; their numbers are the paper’s. π0.5 has since been fine-tuned on the 11 extended tasks the same way (one run per task, its last five checkpoints at 50 episodes each), so it also appears on the 20-task and 11-task views. Cost is every token of a session at the provider’s list price.</p>
       <p>{board.fixed_start.join(', ')} start from the same state on every seed, so a program scores 0 or 100 on them. Randomised starts come with the next version of the board.</p>
       <p>To add your model, email its results to <a href="mailto:jesse.zhang25@imperial.ac.uk">jesse.zhang25@imperial.ac.uk</a> (see <a href="#faq">Questions</a>).</p>
@@ -231,7 +232,8 @@ const mark = (m: string) => makerMarks[m as Maker];
   h2 { margin: 0; font-family: var(--serif); font-weight: 600; font-size: clamp(1.9rem, 3.4vw, 2.4rem); line-height: 1.1; }
   .head p { margin: 0.4rem 0 0; color: var(--ink-2); max-width: 44rem; }
   [data-which] { color: var(--ink); font-weight: 600; }
-  .upd { color: var(--ink-3); white-space: nowrap; }
+  /* the board's date, its own line at the head of the notes under the charts (11-07: was a grey clause in the lede) */
+  .fine .upd { color: var(--ink-2); font-weight: 600; }
   .seg { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 999px; padding: 3px; gap: 2px; }
   .seg button { font: 600 0.875rem var(--sans); border: 0; background: transparent; color: var(--ink-2); padding: 0.4rem 0.9rem; border-radius: 999px; cursor: pointer; }
   .seg button[aria-pressed='true'] { background: var(--ink); color: var(--paper); }
