@@ -87,7 +87,7 @@ export function chart(rs: Row[]) {
   // collide are pushed apart.
   type Anchor = 'start' | 'middle' | 'end';
   type Label = { id: string; text: string; w: number; anchor: Anchor; lx: number; ly: number };
-  const single = new Map<string, number[]>();
+  const single = new Map<string, number[]>(), multi = new Map<string, Label[]>();
   const placed = rs.map((r): Label | null => {
     const ps = r.points.map((p) => [X(p.cost), Y(p.score)]), w = r.name.length * 7.3;
     if (ps.length === 1) { single.set(r.id, ps[0]); return null; }
@@ -102,11 +102,22 @@ export function chart(rs: Row[]) {
       }
       half -= g.len;
     }
-    const anchor: Anchor = nx < -0.15 ? 'end' : nx > 0.15 ? 'start' : 'middle';
-    return { id: r.id, text: r.name, w, anchor, lx: mx + nx * 14, ly: my + ny * 14 + (anchor === 'middle' ? -2 : 4.5) };
+    const at = (x: number, y: number, nx: number, ny: number): Label => {
+      const anchor: Anchor = nx < -0.15 ? 'end' : nx > 0.15 ? 'start' : 'middle';
+      return { id: r.id, text: r.name, w, anchor, lx: x + nx * 14, ly: y + ny * 14 + (anchor === 'middle' ? -2 : 4.5) };
+    };
+    // the middle of the whole line first, then the middle of each segment (longest first), upper side then lower
+    const cands = [at(mx, my, nx, ny)];
+    for (const g of [...segs].sort((p, q) => q.len - p.len)) {
+      const dx = (g.b[0] - g.a[0]) / g.len, dy = (g.b[1] - g.a[1]) / g.len, [ux, uy] = dx > 0 ? [dy, -dx] : [-dy, dx];
+      const cx = (g.a[0] + g.b[0]) / 2, cy = (g.a[1] + g.b[1]) / 2;
+      cands.push(at(cx, cy, ux, uy), at(cx, cy, -ux, -uy));
+    }
+    multi.set(r.id, cands);
+    return cands[0];
   });
   const x0 = (l: { anchor: Anchor; lx: number; w: number }) => (l.anchor === 'end' ? l.lx - l.w : l.anchor === 'middle' ? l.lx - l.w / 2 : l.lx);
-  const labels = placed.filter((l): l is Label => l !== null);
+  const labels: Label[] = [];  // filled below: the multi-point names, then the single points'
   const allDots = rs.flatMap((r) => r.points.map((p) => ({ id: r.id, x: X(p.cost), y: Y(p.score) })));
   const clear = (l: Label) => {
     const a = x0(l), b = a + l.w, top = l.ly - 11, bot = l.ly + 3;
@@ -119,6 +130,16 @@ export function chart(rs: Row[]) {
     }))) return false;
     return labels.every((o) => { const oa = x0(o); return b < oa - 4 || a > oa + o.w + 4 || bot < o.ly - 13 || top > o.ly + 5; });
   };
+  // A line's name avoids other models' dots, lines and names too (11-08: on the core view GPT-6.1 Sol's name sat at
+  // the end of Terra's line): the first candidate along its own line that is clear, else the middle as before.
+  const room = (l: Label) => {  // distance from the name's box to the nearest other model's dot
+    const a = x0(l), b = a + l.w, top = l.ly - 11, bot = l.ly + 3;
+    return Math.min(...allDots.filter((d) => d.id !== l.id).map((d) => Math.hypot(Math.max(a - d.x, 0, d.x - b), Math.max(top - d.y, 0, d.y - bot))));
+  };
+  for (const [, cands] of multi) {
+    const ok = cands.filter(clear);  // of the clear places, the one farthest from other models' dots (ties: first)
+    labels.push(ok.length ? ok.reduce((best, c) => (room(c) > room(best) + 4 ? c : best)) : cands[0]);
+  }
   for (const r of [...rs].sort((p, q) => X(p.points[0].cost) - X(q.points[0].cost))) {
     const at = single.get(r.id);
     if (!at) continue;

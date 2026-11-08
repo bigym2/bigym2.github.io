@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-06",
+ "updated": "2026-11-08",
  "sessions_per_task": 3,
  "budget_steps": 101000,
  "core": [
@@ -175,6 +175,66 @@
      }
     },
     {
+     "effort": "medium",
+     "tested": "2026-11-08",
+     "per": {
+      "dishwasher_close": 66.67,
+      "dishwasher_load_cups": 20.67,
+      "drawer_top_close": 100.0,
+      "drawer_top_open": 27.33,
+      "move_plate": 25.0,
+      "move_two_plates": 0.67,
+      "pick_box": 9.33,
+      "reach_target_dual": 77.0,
+      "reach_target_multi_modal": 96.67,
+      "dishwasher_load_cutlery": 0.67,
+      "dishwasher_load_plates": 1.33,
+      "flip_cup": 15.67,
+      "flip_cutlery": 6.0,
+      "put_cups": 0.0,
+      "reach_target_single": 93.33,
+      "sandwich_remove": 3.33,
+      "saucepan_to_hob": 4.33,
+      "stack_blocks": 6.0,
+      "wall_cupboard_close": 100.0,
+      "wall_cupboard_open": 33.33
+     },
+     "cost": {
+      "core": 48.45,
+      "ext": 128.85
+     }
+    },
+    {
+     "effort": "xhigh",
+     "tested": "2026-11-07",
+     "per": {
+      "dishwasher_close": 100.0,
+      "dishwasher_load_cups": 26.0,
+      "drawer_top_close": 100.0,
+      "drawer_top_open": 92.33,
+      "move_plate": 24.67,
+      "move_two_plates": 0.67,
+      "pick_box": 60.67,
+      "reach_target_dual": 96.0,
+      "reach_target_multi_modal": 99.0,
+      "dishwasher_load_cutlery": 0.0,
+      "dishwasher_load_plates": 4.67,
+      "flip_cup": 44.0,
+      "flip_cutlery": 4.0,
+      "put_cups": 1.67,
+      "reach_target_single": 98.67,
+      "sandwich_remove": 0.0,
+      "saucepan_to_hob": 32.0,
+      "stack_blocks": 1.0,
+      "wall_cupboard_close": 100.0,
+      "wall_cupboard_open": 66.67
+     },
+     "cost": {
+      "core": 68.19,
+      "ext": 118.48
+     }
+    },
+    {
      "effort": "max",
      "tested": "2026-11-06",
      "per": {
@@ -240,6 +300,36 @@
      "cost": {
       "core": 132.74,
       "ext": 144.94
+     }
+    },
+    {
+     "effort": "max",
+     "tested": "2026-11-06",
+     "per": {
+      "dishwasher_close": 0.0,
+      "dishwasher_load_cups": 3.0,
+      "drawer_top_close": 72.67,
+      "drawer_top_open": 30.33,
+      "move_plate": 1.33,
+      "move_two_plates": 1.67,
+      "pick_box": 0.0,
+      "reach_target_dual": 48.33,
+      "reach_target_multi_modal": 95.33,
+      "dishwasher_load_cutlery": 0.0,
+      "dishwasher_load_plates": 0.33,
+      "flip_cup": 1.0,
+      "flip_cutlery": 0.0,
+      "put_cups": 0.0,
+      "reach_target_single": 92.33,
+      "sandwich_remove": 0.0,
+      "saucepan_to_hob": 0.0,
+      "stack_blocks": 0.0,
+      "wall_cupboard_close": 100.0,
+      "wall_cupboard_open": 33.33
+     },
+     "cost": {
+      "core": 150.4,
+      "ext": 252.55
      }
     }
    ]

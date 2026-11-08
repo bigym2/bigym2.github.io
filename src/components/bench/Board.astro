@@ -238,7 +238,12 @@ const mark = (m: string) => makerMarks[m as Maker];
   .seg button { font: 600 0.875rem var(--sans); border: 0; background: transparent; color: var(--ink-2); padding: 0.4rem 0.9rem; border-radius: 999px; cursor: pointer; }
   .seg button[aria-pressed='true'] { background: var(--ink); color: var(--paper); }
   .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .scroll { overflow-x: auto; }
+  /* a wide chart scrolls sideways; the bar runs thin and pale in its own strip below the content, so an overlay
+     scrollbar (macOS) no longer sits on the effort pills (11-08) */
+  .scroll { overflow-x: auto; padding-bottom: 0.75rem; scrollbar-width: thin; scrollbar-color: var(--rule-strong) transparent; }
+  .scroll::-webkit-scrollbar { height: 6px; }
+  .scroll::-webkit-scrollbar-thumb { background: var(--rule-strong); border-radius: 3px; }
+  .scroll::-webkit-scrollbar-track { background: transparent; }
   /* this section runs wider than the page column, so the task dial beside the bars can be large */
   .wide { width: min(100% - 2 * var(--gutter), 86rem); }
   .top { display: grid; grid-template-columns: minmax(0, 1fr) clamp(19rem, 31vw, 30rem); gap: clamp(1.5rem, 3vw, 3rem); align-items: center; }
