@@ -271,7 +271,7 @@ const mark = (m: string) => makerMarks[m as Maker];
   .val { position: absolute; top: 50%; transform: translateY(-50%); left: 0; right: 0; text-align: center; color: #fff; font-family: var(--serif); font-size: clamp(0.95rem, 1.6vw, 1.25rem); font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
   .col[data-s='learned'] .val { color: #15181d; }
   /* dark mode: OpenAI's light grey, the clay and Kimi's blue are light bars, so their score is dark */
-  :global(:root[data-theme='dark']) .col:is([data-s='astra'], [data-s='sol'], [data-s='sol61'], [data-s='terra'], [data-s='opus'], [data-s='haiku'], [data-s='sonnet'], [data-s='kimi']) .val { color: #15181d; }
+  :global(:root[data-theme='dark']) .col:is([data-s='astra'], [data-s='sol'], [data-s='sol61'], [data-s='sol56'], [data-s='terra'], [data-s='opus'], [data-s='haiku'], [data-s='sonnet'], [data-s='kimi']) .val { color: #15181d; }
   :global(:root[data-theme='dark']) .col[data-s='learned'] .val { color: #fff; }
   .col.short .val { top: auto; bottom: calc(100% + 0.35rem); transform: none; color: var(--ink) !important; }
   /* under the pointer (or keyboard focus) the model and its harness show as two short lines just above the bar,

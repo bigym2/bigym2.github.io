@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-18",
+ "updated": "2026-11-19",
  "sessions_per_task": 3,
  "budget_steps": 101000,
  "core": [
@@ -512,6 +512,33 @@
      "cost": {
       "core": 709.74,
       "ext": 850.95
+     }
+    }
+   ]
+  },
+  {
+   "id": "sol56",
+   "name": "GPT-5.6 Sol",
+   "maker": "openai",
+   "harness": "Codex CLI 0.166.0",
+   "efforts": [
+    {
+     "effort": "max",
+     "tested": "2026-11-19",
+     "per": {
+      "dishwasher_close": 0.0,
+      "dishwasher_load_cups": 0.0,
+      "drawer_top_close": 66.67,
+      "drawer_top_open": 41.0,
+      "move_plate": 0.0,
+      "move_two_plates": 0.0,
+      "pick_box": 15.33,
+      "reach_target_dual": 16.33,
+      "reach_target_multi_modal": 66.67
+     },
+     "cost": {
+      "core": 358.58,
+      "ext": null
      }
     }
    ]

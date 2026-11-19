@@ -214,7 +214,7 @@ export function sceneColumns(v: View) {
 
 // Bar labels on two short lines: the model family, then its version.
 const LINES: Record<string, [string, string]> = {
-  opus: ['Claude Opus', '5.5'], astra: ['GPT-6', 'Astra'], sol61: ['GPT-6.1', 'Sol'], sol: ['GPT-6', 'Sol'],
+  opus: ['Claude Opus', '5.5'], astra: ['GPT-6', 'Astra'], sol61: ['GPT-6.1', 'Sol'], sol56: ['GPT-5.6', 'Sol'], sol: ['GPT-6', 'Sol'],
   terra: ['GPT-6.1', 'Terra'], kimi: ['Kimi', 'K3.1 Pro'], deepseek: ['DeepSeek', 'V4.1 Flash 1017'],
 };
 export function nameLines(id: string, name: string, kind = ''): [string, string] {
