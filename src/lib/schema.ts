@@ -218,7 +218,7 @@ export const board = z.object({
       effort: z.enum(['low', 'medium', 'high', 'xhigh', 'max']),
       tested: z.string(),
       per: z.record(z.string(), z.number()),
-      cost: z.object({ core: z.number(), ext: z.number().nullable() }),
+      cost: z.object({ core: z.number().nullable(), ext: z.number().nullable() }),
     })).min(1),
   })).min(1),
   // Learned policies run on the extended tasks after the paper (11-06: π0.5, the collaborator's single-task SFT):

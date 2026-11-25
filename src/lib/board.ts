@@ -20,7 +20,7 @@ export const scenes = tasks.groups.map((g) => ({
 const ordered = scenes.flatMap((s) => s.tasks.map((t) => t.id));
 const inView = (v: View) => ordered.filter((t) => (v === 'all' ? true : v === 'core' ? core.has(t) : !core.has(t)));
 
-export interface Point { effort: string; score: number; cost: number; tested: string; per: Record<string, number> }
+export interface Point { effort: string; score: number; cost: number | null; tested: string; per: Record<string, number> }
 export interface Row {
   id: string; name: string; maker: string; harness: string;
   points: Point[]; top: Point;
@@ -36,7 +36,9 @@ export function rows(v: View): Row[] {
       if (ts.some((t) => e.per[t] == null)) continue;  // an effort not run on every task in view
       const score = ts.reduce((s, t) => s + e.per[t], 0) / ts.length;
       const nCore = board.core.length * board.sessions_per_task, nExt = board.extended.length * board.sessions_per_task;
-      const cost = v === 'core' ? e.cost.core / nCore : v === 'ext' ? e.cost.ext! / nExt : (e.cost.core + e.cost.ext!) / (nCore + nExt);
+      // No API price (GPT-6.2 Astra, 11-25): a score on the bars and in the table, no point on the cost chart.
+      const cost = e.cost.core == null ? null
+        : v === 'core' ? e.cost.core / nCore : v === 'ext' ? e.cost.ext! / nExt : (e.cost.core + e.cost.ext!) / (nCore + nExt);
       points.push({ p: { effort: e.effort, score, cost, tested: e.tested, per: e.per }, per: e.per });
     }
     if (!points.length) continue;
@@ -62,8 +64,13 @@ export function missing(v: View): string[] {
 
 // ---- success against cost per session, log x
 export const CHART = { W: 1100, H: 420, L: 56, R: 28, T: 18, B: 52 };
-export function chart(rs: Row[]) {
+type Priced = Omit<Point, 'cost'> & { cost: number };
+export function chart(all: Row[]) {
   const { W, H, L, R, T, B } = CHART;
+  const rs = all.flatMap((r) => {
+    const points = r.points.filter((p): p is Priced => p.cost != null);
+    return points.length ? [{ ...r, points, top: points[points.length - 1] }] : [];
+  });
   const costs = rs.flatMap((r) => r.points.map((p) => p.cost));
   const lo = Math.min(...costs) / 1.6, hi = Math.max(...costs) * 1.5;
   const lx = Math.log(lo), hx = Math.log(hi);
@@ -214,7 +221,7 @@ export function sceneColumns(v: View) {
 
 // Bar labels on two short lines: the model family, then its version.
 const LINES: Record<string, [string, string]> = {
-  opus: ['Claude Opus', '5.5'], astra: ['GPT-6', 'Astra'], sol61: ['GPT-6.1', 'Sol'], sol56: ['GPT-5.6', 'Sol'], sol: ['GPT-6', 'Sol'],
+  opus: ['Claude Opus', '5.5'], astra: ['GPT-6', 'Astra'], sol61: ['GPT-6.1', 'Sol'], sol56: ['GPT-5.6', 'Sol'], astra62: ['GPT-6.2', 'Astra'], sol: ['GPT-6', 'Sol'],
   terra: ['GPT-6.1', 'Terra'], kimi: ['Kimi', 'K3.1 Pro'], deepseek: ['DeepSeek', 'V4.1 Flash 1017'],
 };
 export function nameLines(id: string, name: string, kind = ''): [string, string] {

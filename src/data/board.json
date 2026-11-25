@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-19",
+ "updated": "2026-11-24",
  "sessions_per_task": 3,
  "budget_steps": 101000,
  "core": [
@@ -538,6 +538,44 @@
      },
      "cost": {
       "core": 358.58,
+      "ext": null
+     }
+    }
+   ]
+  },
+  {
+   "id": "astra62",
+   "name": "GPT-6.2 Astra",
+   "maker": "openai",
+   "harness": "Codex CLI 0.166.0",
+   "efforts": [
+    {
+     "effort": "max",
+     "tested": "2026-11-24",
+     "per": {
+      "dishwasher_close": 100.0,
+      "dishwasher_load_cups": 87.33,
+      "drawer_top_close": 100.0,
+      "drawer_top_open": 99.67,
+      "move_plate": 99.33,
+      "move_two_plates": 91.33,
+      "pick_box": 91.0,
+      "reach_target_dual": 100.0,
+      "reach_target_multi_modal": 100.0,
+      "dishwasher_load_cutlery": 51.33,
+      "dishwasher_load_plates": 83.0,
+      "flip_cup": 96.67,
+      "flip_cutlery": 97.0,
+      "put_cups": 90.0,
+      "reach_target_single": 100.0,
+      "sandwich_remove": 60.33,
+      "saucepan_to_hob": 94.67,
+      "stack_blocks": 63.67,
+      "wall_cupboard_close": 100.0,
+      "wall_cupboard_open": 100.0
+     },
+     "cost": {
+      "core": null,
       "ext": null
      }
     }
