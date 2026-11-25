@@ -575,8 +575,8 @@
       "wall_cupboard_open": 100.0
      },
      "cost": {
-      "core": null,
-      "ext": null
+      "core": 155.7,
+      "ext": 263.75
      }
     }
    ]

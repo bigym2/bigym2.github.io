@@ -74,7 +74,7 @@ export function chart(all: Row[]) {
   const costs = rs.flatMap((r) => r.points.map((p) => p.cost));
   const lo = Math.min(...costs) / 1.6, hi = Math.max(...costs) * 1.5;
   const lx = Math.log(lo), hx = Math.log(hi);
-  const ymax = Math.ceil((Math.max(...rs.map((r) => r.top.score)) + 8) / 20) * 20;
+  const ymax = Math.min(100, Math.ceil((Math.max(...rs.map((r) => r.top.score)) + 8) / 20) * 20);
   const X = (c: number) => L + (W - L - R) * (Math.log(c) - lx) / (hx - lx);
   const Y = (v: number) => T + (H - T - B) * (1 - v / ymax);
   const xticks = [0.2, 0.5, 1, 2, 5, 10, 20, 50].filter((c) => c > lo && c < hi).map((c) => ({ x: X(c), label: `$${c}` }));

@@ -13,7 +13,7 @@ const START = 'core';
 const views = VIEWS.map((v) => {
   const es = entries(v.id);
   const top = Math.max(...es.map((e) => e.score));
-  const scale = Math.ceil((top + 6) / 20) * 20;
+  const scale = Math.min(100, Math.ceil((top + 6) / 20) * 20);  // a success rate never passes 100 %
   return { ...v, es, scale, cols: sceneColumns(v.id), ch: chart(rows(v.id)), left: missing(v.id) };
 });
 const updated = new Date(`${board.updated}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -139,7 +139,7 @@ const mark = (m: string) => makerMarks[m as Maker];
     ))}
     <div class="fine">
       <p class="upd">Last updated <time datetime={board.updated}>{updated}</time></p>
-      <p>Each model’s bar is the highest reasoning effort we ran it at; the cost chart shows every effort. On the 9 core tasks the learned policies of the paper join the board, trained on 60 demonstrations per task where an agent sees one; their numbers are the paper’s. π0.5 has since been fine-tuned on the 11 extended tasks the same way (one run per task, its last five checkpoints at 50 episodes each), so it also appears on the 20-task and 11-task views. Cost is every token of a session at the provider’s list price; GPT-6.2 Astra has no published API price yet, so it is on the bars but not on the cost chart.</p>
+      <p>Each model’s bar is the highest reasoning effort we ran it at; the cost chart shows every effort. On the 9 core tasks the learned policies of the paper join the board, trained on 60 demonstrations per task where an agent sees one; their numbers are the paper’s. π0.5 has since been fine-tuned on the 11 extended tasks the same way (one run per task, its last five checkpoints at 50 episodes each), so it also appears on the 20-task and 11-task views. Cost is every token of a session at the provider’s list price.</p>
       <p>{board.fixed_start.join(', ')} start from the same state on every seed, so a program scores 0 or 100 on them. Randomised starts come with the next version of the board.</p>
       <p>To add your model, email its results to <a href="mailto:jesse.zhang25@imperial.ac.uk">jesse.zhang25@imperial.ac.uk</a> (see <a href="#faq">Questions</a>).</p>
     </div>
