@@ -8,8 +8,9 @@ import { VIEWS, entries, sceneColumns, rows, missing, chart, CHART, nameLines } 
 import Dial from './Dial.astro';
 import { makerMarks, type Maker } from '../../lib/makerMarks';
 
-// the task set the board opens on: the 9 core tasks, the one set every agent and the paper's learned policies share
-const START = 'core';
+// the task set the board opens on: all 20 tasks (11-26, user; every agent but GPT-5.6 Sol has them now). The paper's
+// learned policies other than π0.5 have the 9 core tasks only, so they appear one click away, on "9 core".
+const START = 'all';
 const views = VIEWS.map((v) => {
   const es = entries(v.id);
   const top = Math.max(...es.map((e) => e.score));
