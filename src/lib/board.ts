@@ -109,16 +109,27 @@ export function chart(all: Row[]) {
       }
       half -= g.len;
     }
-    const at = (x: number, y: number, nx: number, ny: number): Label => {
+    const at = (x: number, y: number, nx: number, ny: number, off = 14): Label => {
       const anchor: Anchor = nx < -0.15 ? 'end' : nx > 0.15 ? 'start' : 'middle';
-      return { id: r.id, text: r.name, w, anchor, lx: x + nx * 14, ly: y + ny * 14 + (anchor === 'middle' ? -2 : 4.5) };
+      return { id: r.id, text: r.name, w, anchor, lx: x + nx * off, ly: y + ny * off + (anchor === 'middle' ? -2 : 4.5) };
     };
-    // the middle of the whole line first, then the middle of each segment (longest first), upper side then lower
-    const cands = [at(mx, my, nx, ny)];
-    for (const g of [...segs].sort((p, q) => q.len - p.len)) {
-      const dx = (g.b[0] - g.a[0]) / g.len, dy = (g.b[1] - g.a[1]) / g.len, [ux, uy] = dx > 0 ? [dy, -dx] : [-dy, dx];
-      const cx = (g.a[0] + g.b[0]) / 2, cy = (g.a[1] + g.b[1]) / 2;
-      cands.push(at(cx, cy, ux, uy), at(cx, cy, -ux, -uy));
+    // the middle of the whole line first, then the middle of each segment (longest first), upper side then lower,
+    // each a little off the line and then farther off (11-26: a wide name beside a sloped line crossed the line
+    // itself, GPT-6.1 Sol's and GPT-6 Sol's); last, beside an end dot, as a single point's name is placed
+    const cands: Label[] = [];
+    for (const off of [14, 24]) {
+      cands.push(at(mx, my, nx, ny, off));
+      for (const g of [...segs].sort((p, q) => q.len - p.len)) {
+        const dx = (g.b[0] - g.a[0]) / g.len, dy = (g.b[1] - g.a[1]) / g.len, [ux, uy] = dx > 0 ? [dy, -dx] : [-dy, dx];
+        const cx = (g.a[0] + g.b[0]) / 2, cy = (g.a[1] + g.b[1]) / 2;
+        cands.push(at(cx, cy, ux, uy, off), at(cx, cy, -ux, -uy, off));
+      }
+    }
+    for (const [x, y] of [ps[ps.length - 1], ps[0]]) {
+      cands.push({ id: r.id, text: r.name, w, anchor: 'start', lx: x + 12, ly: y + 4.5 },
+        { id: r.id, text: r.name, w, anchor: 'end', lx: x - 12, ly: y + 4.5 },
+        { id: r.id, text: r.name, w, anchor: 'middle', lx: x, ly: y - 12 },
+        { id: r.id, text: r.name, w, anchor: 'middle', lx: x, ly: y + 21 });
     }
     multi.set(r.id, cands);
     return cands[0];
@@ -129,9 +140,10 @@ export function chart(all: Row[]) {
   const clear = (l: Label) => {
     const a = x0(l), b = a + l.w, top = l.ly - 11, bot = l.ly + 3;
     if (a < L || b > W - R || top < T - 6) return false;
-    if (allDots.some((d) => d.id !== l.id && d.x > a - 9 && d.x < b + 9 && d.y > top - 7 && d.y < bot + 7)) return false;
-    // nor across another model's line (Opus's name sat on Astra's high-to-max line in the 20-task view)
-    if (arrows.some((g) => g.id !== l.id && Array.from({ length: 25 }, (_, i) => i / 24).some((t) => {
+    if (allDots.some((d) => d.x > a - 9 && d.x < b + 9 && d.y > top - 7 && d.y < bot + 7)) return false;
+    // nor across any line, its own included (Opus's name sat on Astra's high-to-max line in the 20-task view; 11-26
+    // GPT-6.1 Sol's on its own)
+    if (arrows.some((g) => Array.from({ length: 25 }, (_, i) => i / 24).some((t) => {
       const px = g.x1 + (g.x2 - g.x1) * t, py = g.y1 + (g.y2 - g.y1) * t;
       return px > a - 3 && px < b + 3 && py > top - 3 && py < bot + 3;
     }))) return false;
@@ -144,8 +156,9 @@ export function chart(all: Row[]) {
     return Math.min(...allDots.filter((d) => d.id !== l.id).map((d) => Math.hypot(Math.max(a - d.x, 0, d.x - b), Math.max(top - d.y, 0, d.y - bot))));
   };
   for (const [, cands] of multi) {
-    const ok = cands.filter(clear);  // of the clear places, the one farthest from other models' dots (ties: first)
-    labels.push(ok.length ? ok.reduce((best, c) => (room(c) > room(best) + 4 ? c : best)) : cands[0]);
+    // of the clear places, the first (nearest its own line) with some room from other models' dots, else the roomiest
+    const ok = cands.filter(clear);
+    labels.push(ok.find((c) => room(c) >= 14) ?? (ok.length ? ok.reduce((best, c) => (room(c) > room(best) + 4 ? c : best)) : cands[0]));
   }
   for (const r of [...rs].sort((p, q) => X(p.points[0].cost) - X(q.points[0].cost))) {
     const at = single.get(r.id);
