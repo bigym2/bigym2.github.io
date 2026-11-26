@@ -84,7 +84,7 @@ export function chart(all: Row[]) {
     name: r.name, effort: p.effort, score: p.score, cost: p.cost })));
   const arrows = rs.filter((r) => r.points.length > 1).flatMap((r) => r.points.slice(1).map((b, i) => {
     const a = r.points[i];
-    return { id: r.id, x1: X(a.cost), y1: Y(a.score), x2: X(b.cost), y2: Y(b.score) };  // centre to centre, drawn under the dots
+    return { id: r.id, x1: X(a.cost), y1: Y(a.score), x2: X(b.cost), y2: Y(b.score), c1: a.cost, s1: a.score, c2: b.cost, s2: b.score };  // centre to centre, drawn under the dots
   }));
   // A model run at several efforts is named along its line, as Artificial Analysis does: beside the middle of the
   // line, on its upper side, the text running away from the line. A single point is named to its right; where that
@@ -188,7 +188,14 @@ export function chart(all: Row[]) {
       if (a.ly <= b.ly) { a.ly -= d; b.ly += d; } else { a.ly += d; b.ly -= d; }
     }
   }
-  return { xticks, yticks, dots, arrows, labels, axisY: H - B, x0: L, x1: W - R, y0: T };
+  // for zooming in the page (11-26): each name rides with the nearest dot of its model, at a fixed pixel offset
+  const anchored = labels.map((l) => {
+    const own = dots.filter((d) => d.id === l.id);
+    const lx0 = x0(l) + l.w / 2, ly0 = l.ly - 4;
+    const d = own.reduce((b, o) => (Math.hypot(o.x - lx0, o.y - ly0) < Math.hypot(b.x - lx0, b.y - ly0) ? o : b), own[0]);
+    return { ...l, ac: d.cost, as: d.score, dx: l.lx - d.x, dy: l.ly - d.y };
+  });
+  return { xticks, yticks, dots, arrows, labels: anchored, axisY: H - B, x0: L, x1: W - R, y0: T, lx, hx, ymax };
 }
 
 // Learned policies, from the paper's results (9 core tasks only): the bar is the paper's mean,

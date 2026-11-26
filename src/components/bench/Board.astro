@@ -109,18 +109,30 @@ const mark = (m: string) => makerMarks[m as Maker];
         </div>
 
         <h3>A score is a point on a cost curve</h3>
-        <p class="sub">Mean success against what one session costs at list price, log scale. A model run at several efforts is one line through its points.</p>
+        <p class="sub">Mean success against what one session costs at list price, log scale. A model run at several efforts is one line through its points. Zoom with a pinch, ⌘/Ctrl and scroll, a double-click or the buttons; drag to move.</p>
         <div class="scroll costwrap" data-costchart>
-          <svg class="cost-chart" viewBox={`0 0 ${CHART.W} ${CHART.H}`} role="img" aria-label={`Mean success against cost per session, ${v.lede}`} data-x0={v.ch.x0} data-axis={v.ch.axisY}>
-            {v.ch.yticks.map((t) => <><line class="grid" x1={v.ch.x0} x2={v.ch.x1} y1={t.y} y2={t.y} /><text class="tick" x={v.ch.x0 - 10} y={t.y + 4} text-anchor="end">{t.label}</text></>)}
-            {v.ch.xticks.map((t) => <><line class="grid dash" x1={t.x} x2={t.x} y1={v.ch.y0} y2={v.ch.axisY} /><text class="tick" x={t.x} y={v.ch.axisY + 20} text-anchor="middle">{t.label}</text></>)}
+          <div class="zoombar">
+            <button type="button" data-zoom="in" aria-label="Zoom in">+</button>
+            <button type="button" data-zoom="out" aria-label="Zoom out">−</button>
+            <button type="button" data-zoom="reset" disabled>Reset</button>
+          </div>
+          <svg class="cost-chart" viewBox={`0 0 ${CHART.W} ${CHART.H}`} role="img" aria-label={`Mean success against cost per session, ${v.lede}`}
+            data-x0={v.ch.x0} data-x1={v.ch.x1} data-y0={v.ch.y0} data-axis={v.ch.axisY} data-lx={v.ch.lx} data-hx={v.ch.hx} data-ymax={v.ch.ymax}>
+            <defs><clipPath id={`costclip-${v.id}`}><rect x={v.ch.x0} y={v.ch.y0 - 8} width={v.ch.x1 - v.ch.x0} height={v.ch.axisY - v.ch.y0 + 8} /></clipPath></defs>
+            <g class="ticks">
+              {v.ch.yticks.map((t) => <><line class="grid" x1={v.ch.x0} x2={v.ch.x1} y1={t.y} y2={t.y} /><text class="tick" x={v.ch.x0 - 10} y={t.y + 4} text-anchor="end">{t.label}</text></>)}
+              {v.ch.xticks.map((t) => <><line class="grid dash" x1={t.x} x2={t.x} y1={v.ch.y0} y2={v.ch.axisY} /><text class="tick" x={t.x} y={v.ch.axisY + 20} text-anchor="middle">{t.label}</text></>)}
+            </g>
             <text class="axis" x={(v.ch.x0 + v.ch.x1) / 2} y={CHART.H - 8} text-anchor="middle">Cost per session, US$</text>
-            {v.ch.labels.map((l) => <text class="lab" data-id={l.id} style={`--c: var(--series-${l.id})`} x={l.lx} y={l.ly} text-anchor={l.anchor}>{l.text}</text>)}
+            <g class="plot" clip-path={`url(#costclip-${v.id})`}>
+            {v.ch.labels.map((l) => <text class="lab" data-id={l.id} style={`--c: var(--series-${l.id})`} x={l.lx} y={l.ly} text-anchor={l.anchor}
+              data-ac={l.ac} data-as={l.as} data-dx={l.dx} data-dy={l.dy}>{l.text}</text>)}
             {[...new Set(v.ch.dots.map((d) => d.id))].map((id) => (
               <g class="series" data-id={id} style={`--c: var(--series-${id})`}>
-                {v.ch.arrows.filter((a) => a.id === id).map((a) => <line class="join" x1={a.x1} y1={a.y1} x2={a.x2} y2={a.y2} />)}
+                {v.ch.arrows.filter((a) => a.id === id).map((a) => <line class="join" x1={a.x1} y1={a.y1} x2={a.x2} y2={a.y2} data-c1={a.c1} data-s1={a.s1} data-c2={a.c2} data-s2={a.s2} />)}
                 {v.ch.dots.filter((d) => d.id === id).map((d) => (
                   <g class="hit" tabindex="0" data-name={d.name} data-effort={d.effort} data-score={d.score.toFixed(1)} data-cost={d.cost < 1 ? d.cost.toFixed(2) : d.cost.toFixed(1)}
+                    data-c={d.cost} data-s={d.score}
                     data-x={d.x.toFixed(1)} data-y={d.y.toFixed(1)} aria-label={`${d.name}, ${d.effort} effort: ${d.score.toFixed(1)}% at $${d.cost.toFixed(2)} per session`}>
                     <circle class="zone" cx={d.x} cy={d.y} r="15" />
                     <circle class="pt" cx={d.x} cy={d.y} r="6" />
@@ -128,6 +140,7 @@ const mark = (m: string) => makerMarks[m as Maker];
                 ))}
               </g>
             ))}
+            </g>
             <g class="guide" aria-hidden="true">
               <line class="gl-x" /><line class="gl-y" />
               <rect class="rb-y" height="18" rx="3" /><text class="rd-y" text-anchor="end" />
@@ -182,11 +195,109 @@ const mark = (m: string) => makerMarks[m as Maker];
     };
     const hide = () => { wrap.classList.remove('hovering'); tip.classList.remove('on'); svg.querySelectorAll('.hit.cur').forEach((h) => h.classList.remove('cur')); };
     svg.querySelectorAll<SVGGElement>('.hit').forEach((g) => {
-      g.addEventListener('pointerenter', () => show(g));
+      g.addEventListener('pointerenter', () => { if (!drag) show(g); });
       g.addEventListener('pointerleave', hide);
       g.addEventListener('focus', () => show(g));
       g.addEventListener('blur', hide);
     });
+
+    // Zoom (11-26): the axes rescale and every mark is redrawn at its data position, so dots and names keep their
+    // size; a name rides with the nearest dot of its model. Never wider than the full chart.
+    const D = svg.dataset, X0 = +D.x0!, X1 = +D.x1!, Y0 = +D.y0!, base = { lx: +D.lx!, hx: +D.hx!, ylo: 0, yhi: +D.ymax! };
+    let dom = { ...base }, drag: { x: number; y: number; d: typeof dom } | null = null;
+    const ptrs = new Map<number, { x: number; y: number }>();
+    let pinch: { dist: number; d: typeof dom; mx: number; my: number } | null = null;
+    const X = (c: number) => X0 + (X1 - X0) * (Math.log(c) - dom.lx) / (dom.hx - dom.lx);
+    const Y = (s: number) => Y0 + (axis - Y0) * (1 - (s - dom.ylo) / (dom.yhi - dom.ylo));
+    const ticksG = svg.querySelector<SVGGElement>('.ticks')!, NS = 'http://www.w3.org/2000/svg';
+    const scope = [...ticksG.attributes].filter((a) => a.name.startsWith('data-astro-cid')).map((a) => a.name);  // so the scoped tick styles apply
+    const el = (tag: string, a: Record<string, number | string>, text?: string) => {
+      const e = document.createElementNS(NS, tag); set(e, a); scope.forEach((n) => e.setAttribute(n, ''));
+      if (text) e.textContent = text; ticksG.appendChild(e); return e;
+    };
+    const money = (c: number) => `$${c < 1 ? +c.toPrecision(2) : +c.toPrecision(3)}`;
+    const drawTicks = () => {
+      ticksG.replaceChildren();
+      const span = dom.yhi - dom.ylo, step = [1, 2, 5, 10, 20].find((k) => span / k <= 6) ?? 20;
+      for (let v = Math.ceil(dom.ylo / step) * step; v <= dom.yhi + 1e-9; v += step) {
+        const y = Y(v); el('line', { class: 'grid', x1: X0, x2: X1, y1: y, y2: y }); el('text', { class: 'tick', x: X0 - 10, y: y + 4, 'text-anchor': 'end' }, `${+v.toFixed(1)}%`);
+      }
+      const lo = Math.exp(dom.lx), hi = Math.exp(dom.hx);
+      const at = (m: number[]) => [-2, -1, 0, 1, 2, 3].flatMap((e) => m.map((k) => k * 10 ** e)).filter((c) => c >= lo && c <= hi);
+      let xs = at([1, 2, 5]);
+      if (xs.length > 9) xs = at([1]); else if (xs.length < 3) xs = at([1, 1.5, 2, 3, 5, 7]);
+      if (xs.length < 3) xs = at([1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9]);
+      for (const c of xs) {
+        const x = X(c); el('line', { class: 'grid dash', x1: x, x2: x, y1: Y0, y2: axis }); el('text', { class: 'tick', x, y: axis + 20, 'text-anchor': 'middle' }, money(c));
+      }
+    };
+    const draw = () => {
+      drawTicks();
+      svg.querySelectorAll<SVGGElement>('.hit').forEach((g) => {
+        const x = X(+g.dataset.c!), y = Y(+g.dataset.s!);
+        g.dataset.x = x.toFixed(1); g.dataset.y = y.toFixed(1);
+        g.querySelectorAll('circle').forEach((c) => set(c, { cx: x, cy: y }));
+      });
+      svg.querySelectorAll<SVGLineElement>('line.join').forEach((l) => {
+        const d = l.dataset; set(l, { x1: X(+d.c1!), y1: Y(+d.s1!), x2: X(+d.c2!), y2: Y(+d.s2!) });
+      });
+      svg.querySelectorAll<SVGTextElement>('text.lab').forEach((t) => {
+        const d = t.dataset; set(t, { x: X(+d.ac!) + +d.dx!, y: Y(+d.as!) + +d.dy! });
+      });
+      const full = dom.lx <= base.lx + 1e-6 && dom.hx >= base.hx - 1e-6 && dom.ylo <= 1e-6 && dom.yhi >= base.yhi - 1e-6;
+      wrap.querySelector<HTMLButtonElement>('[data-zoom="reset"]')!.disabled = full;
+      wrap.classList.toggle('zoomed', !full);
+    };
+    const clamp = (d: typeof dom) => {  // keep the window inside the full chart, at least 1/40 of its width and 3 points tall
+      const w = Math.min(Math.max(d.hx - d.lx, (base.hx - base.lx) / 40), base.hx - base.lx);
+      const h = Math.min(Math.max(d.yhi - d.ylo, 3), base.yhi);
+      let lx = Math.min(Math.max(d.lx, base.lx), base.hx - w), ylo = Math.min(Math.max(d.ylo, 0), base.yhi - h);
+      if (!isFinite(lx)) lx = base.lx;
+      if (!isFinite(ylo)) ylo = 0;
+      return { lx, hx: lx + w, ylo, yhi: ylo + h };
+    };
+    const toSvg = (cx: number, cy: number) => {
+      const m = svg.getScreenCTM()!.inverse(), p = new DOMPoint(cx, cy).matrixTransform(m); return { x: p.x, y: p.y };
+    };
+    const zoomAt = (sx: number, sy: number, k: number, from = dom) => {  // k < 1 zooms in, around svg point (sx, sy)
+      const fx = Math.min(Math.max((sx - X0) / (X1 - X0), 0), 1), fy = Math.min(Math.max((axis - sy) / (axis - Y0), 0), 1);
+      const cx = from.lx + fx * (from.hx - from.lx), cy = from.ylo + fy * (from.yhi - from.ylo);
+      const w = (from.hx - from.lx) * k, h = (from.yhi - from.ylo) * k;
+      dom = clamp({ lx: cx - fx * w, hx: cx - fx * w + w, ylo: cy - fy * h, yhi: cy - fy * h + h }); hide(); draw();
+    };
+    const mid = () => ({ x: (X0 + X1) / 2, y: (Y0 + axis) / 2 });
+    wrap.querySelector('[data-zoom="in"]')!.addEventListener('click', () => zoomAt(mid().x, mid().y, 0.6));
+    wrap.querySelector('[data-zoom="out"]')!.addEventListener('click', () => zoomAt(mid().x, mid().y, 1 / 0.6));
+    wrap.querySelector('[data-zoom="reset"]')!.addEventListener('click', () => { dom = { ...base }; hide(); draw(); });
+    svg.addEventListener('wheel', (e) => {  // a trackpad pinch arrives as ctrl + wheel; a plain wheel still scrolls the page
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault(); const p = toSvg(e.clientX, e.clientY); zoomAt(p.x, p.y, Math.exp(e.deltaY * 0.01));
+    }, { passive: false });
+    svg.addEventListener('dblclick', (e) => { const p = toSvg(e.clientX, e.clientY); zoomAt(p.x, p.y, e.shiftKey ? 1 / 0.5 : 0.5); });
+    svg.addEventListener('pointerdown', (e) => {
+      ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (ptrs.size === 2) {
+        const [a, b] = [...ptrs.values()], m = toSvg((a.x + b.x) / 2, (a.y + b.y) / 2);
+        pinch = { dist: Math.hypot(a.x - b.x, a.y - b.y), d: { ...dom }, mx: m.x, my: m.y }; drag = null; return;
+      }
+      if (e.button !== 0) return;
+      drag = { ...toSvg(e.clientX, e.clientY), d: { ...dom } }; svg.setPointerCapture(e.pointerId);
+    });
+    svg.addEventListener('pointermove', (e) => {
+      if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pinch && ptrs.size === 2) {
+        const [a, b] = [...ptrs.values()], dist = Math.hypot(a.x - b.x, a.y - b.y);
+        if (dist > 0) zoomAt(pinch.mx, pinch.my, pinch.dist / dist, pinch.d);
+        return;
+      }
+      if (!drag) return;
+      const p = toSvg(e.clientX, e.clientY), d = drag.d;
+      const dl = -(p.x - drag.x) / (X1 - X0) * (d.hx - d.lx), dy = (p.y - drag.y) / (axis - Y0) * (d.yhi - d.ylo);
+      if (Math.abs(p.x - drag.x) + Math.abs(p.y - drag.y) > 3) { hide(); svg.classList.add('panning'); }
+      dom = clamp({ lx: d.lx + dl, hx: d.hx + dl, ylo: d.ylo + dy, yhi: d.yhi + dy }); draw();
+    });
+    const up = (e: PointerEvent) => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; drag = null; svg.classList.remove('panning'); };
+    svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up);
   }
   const sec = document.getElementById('board')!;
   const buttons = [...sec.querySelectorAll<HTMLButtonElement>('[data-set]')];
@@ -348,6 +459,15 @@ const mark = (m: string) => makerMarks[m as Maker];
   .cost-chart .guide rect { fill: var(--paper); }
   .cost-chart .guide text { font-size: 12.5px; font-weight: 700; fill: var(--c); font-variant-numeric: tabular-nums; }
   .costwrap { position: relative; }
+  .cost-chart { touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+  .costwrap.zoomed .cost-chart { cursor: grab; }
+  .cost-chart.panning { cursor: grabbing; }
+  .zoombar { position: absolute; top: 0.25rem; right: 0.5rem; z-index: 1; display: flex; gap: 0.3rem; }
+  .zoombar button { font: 600 13px/1 var(--sans); color: var(--ink-2); background: var(--paper); border: 1px solid var(--rule);
+    border-radius: 6px; min-width: 2rem; padding: 0.35rem 0.55rem; cursor: pointer; }
+  .zoombar button:hover:not(:disabled) { color: var(--ink); border-color: var(--ink-3); }
+  .zoombar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .zoombar button:disabled { opacity: 0.4; cursor: default; }
   .ctip { position: absolute; z-index: 2; pointer-events: none; display: grid; gap: 0.15rem; padding: 0.45rem 0.7rem; border-radius: 8px;
     background: var(--paper); border: 1px solid var(--rule); box-shadow: 0 4px 14px rgb(0 0 0 / 0.08); white-space: nowrap;
     transform: translate(14px, calc(-100% - 10px)); opacity: 0; transition: opacity 120ms; }
