@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-24",
+ "updated": "2026-11-26",
  "sessions_per_task": 3,
  "budget_steps": 101000,
  "core": [
@@ -577,6 +577,44 @@
      "cost": {
       "core": 155.7,
       "ext": 263.75
+     }
+    }
+   ]
+  },
+  {
+   "id": "sol62",
+   "name": "GPT-6.2 Sol",
+   "maker": "openai",
+   "harness": "Codex CLI 0.166.0",
+   "efforts": [
+    {
+     "effort": "max",
+     "tested": "2026-11-26",
+     "per": {
+      "dishwasher_close": 100.0,
+      "dishwasher_load_cups": 89.33,
+      "drawer_top_close": 100.0,
+      "drawer_top_open": 91.0,
+      "move_plate": 57.33,
+      "move_two_plates": 42.33,
+      "pick_box": 69.33,
+      "reach_target_dual": 98.67,
+      "reach_target_multi_modal": 100.0,
+      "dishwasher_load_cutlery": 25.33,
+      "dishwasher_load_plates": 19.33,
+      "flip_cup": 97.33,
+      "flip_cutlery": 79.0,
+      "put_cups": 51.0,
+      "reach_target_single": 100.0,
+      "sandwich_remove": 21.33,
+      "saucepan_to_hob": 51.67,
+      "stack_blocks": 44.33,
+      "wall_cupboard_close": 100.0,
+      "wall_cupboard_open": 100.0
+     },
+     "cost": {
+      "core": 62.17,
+      "ext": 100.32
      }
     }
    ]
